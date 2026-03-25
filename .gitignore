@@ -1,5 +1,5 @@
 # 🔒 SEGURANÇA (NUNCA subir isso)
-*.json
+#*.json
 .env
 .env.local
 

@@ -1,0 +1,9 @@
+{
+  "appId": "com.mathadventure.plus",
+  "appName": "Math Adventure+",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

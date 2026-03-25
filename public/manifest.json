@@ -1,0 +1,17 @@
+{
+  "name": "Math Adventure+",
+  "short_name": "Math+",
+  "description": "Aprenda matemática com jogos e desafios! BNCC 3º-9º ano",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a2e",
+  "theme_color": "#00d4ff",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
