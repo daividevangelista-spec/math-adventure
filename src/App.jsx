@@ -7,7 +7,7 @@ import {
   User, Award, Menu as MenuIcon, X, Plus, LogOut, 
   ChevronRight, Star, Target, Crown, Users, Globe, Download, ArrowLeft, GraduationCap,
   Trash2, Edit3, UserMinus, TrendingUp, Zap, HelpCircle, Copy,
-  Search, Eye, EyeOff, Clock, Layout, Activity
+  Search, Eye, EyeOff, Clock, Layout, Activity, Volume2, VolumeX
 } from 'lucide-react';
 import { useGameState } from './hooks/useGameState';
 import LoginScreen from './components/LoginScreen';
@@ -15,6 +15,8 @@ import GameRoom from './components/GameRoom';
 import { Mascot } from './components/Mascot';
 import { rankingAPI, authAPI, supabase } from './lib/supabase';
 import { GameTransition } from './components/GameTransition';
+import ParticleBackground from './components/ParticleBackground';
+
 import { playSound } from './utils/audioManager';
 import jsPDF from 'jspdf';
 import {
@@ -1637,6 +1639,15 @@ const AppContent = () => {
   const [showSetup, setShowSetup] = React.useState(false);
   const [pendingSession, setPendingSession] = React.useState(null);
 
+  const [audioMuted, setAudioMuted] = React.useState(false);
+  const toggleAudio = () => {
+    const newMutedState = !audioMuted;
+    playSound.setMuted(newMutedState);
+    setAudioMuted(newMutedState);
+    if (newMutedState) playSound.stopBGM();
+    else playSound.startBGM(); 
+  };
+
   // --- MOVED HOOKS (Ensuring they are called before any early returns) ---
   const [setupName, setSetupName] = React.useState('');
   const [setupGrade, setSetupGrade] = React.useState('3º');
@@ -1958,330 +1969,200 @@ const AppContent = () => {
   }
 
     const Dashboard = () => {
-      const filteredModules = modules;
-      const ringProgress = (xp % 100);
-      const circumference = 2 * Math.PI * 65; // r=65
-      const strokeDashoffset = circumference - (ringProgress / 100) * circumference;
+      const gameColors = [
+        'bg-gradient-to-br from-emerald-500 to-emerald-700',
+        'bg-gradient-to-br from-purple-500 to-purple-700',
+        'bg-gradient-to-br from-blue-500 to-blue-700',
+        'bg-gradient-to-br from-orange-500 to-orange-700',
+        'bg-gradient-to-br from-pink-500 to-pink-700',
+        'bg-gradient-to-br from-cyan-500 to-cyan-700',
+        'bg-gradient-to-br from-indigo-500 to-indigo-700',
+        'bg-gradient-to-br from-rose-500 to-rose-700',
+      ];
+      // Tabuada first as hero, then rest
+      const regularCards = [
+        { name: "Soma (+)",       id: "soma",          emoji: "➕" },
+        { name: "Subtração (-)", id: "subtracao",     emoji: "➖" },
+        { name: "Multiplicação", id: "multiplicacao",  emoji: "✖️" },
+        { name: "Divisão (/)",   id: "divisao",       emoji: "➗" },
+        { name: "Porcentagem",    id: "porcentagem",    emoji: "📊" },
+        { name: "Frações",       id: "fracoes",       emoji: "🍕" },
+        { name: "Decimais",       id: "decimais",      emoji: "📐" },
+        { name: "Área",           id: "area",          emoji: "📏" },
+      ];
+
+      const isMusicOn = settings?.musicEnabled !== false;
 
       return (
-        <div className="max-w-md mx-auto p-4 pb-28 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 relative z-10">
-          <GameTransition show={isStarting} />
-          {/* AAA HEADER STATUS */}
-          <header className="flex items-center justify-between px-2 pt-2">
-             <div className="flex gap-4">
-               <motion.div 
-                 whileHover={{ scale: 1.05 }}
-                 className="flex items-center gap-3 font-black text-primary text-neon italic text-[10px] tracking-widest uppercase bg-white/5 pr-4 pl-1 py-1 rounded-xl border border-white/5 shadow-aaa"
-               >
-                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary shadow-neon">
-                     {user?.role === 'teacher' || isPremium ? <Crown size={18} /> : <User size={18} />}
-                  </div>
-                  <div className="flex flex-col">
-                     <span className="text-white brightness-125 leading-none">{user?.name?.split(' ')[0]}</span>
-                     <span className="text-[7px] text-primary/70 opacity-80 mt-1">
-                       {user?.role === 'teacher' ? 'ADMIN' : isPremium ? 'PREMIUM' : 'ALUNO'}
-                     </span>
-                  </div>
-               </motion.div>
-               <motion.div 
-                 whileHover={{ scale: 1.1 }}
-                 className="flex items-center gap-2 font-black text-primary text-neon italic text-[10px] tracking-[0.3em] uppercase bg-white/5 px-4 py-2 rounded-xl border border-white/5"
-               >
-                 <Target size={14} /> {grade} ANO
-               </motion.div>
-               <motion.div 
-                 whileHover={{ scale: 1.1, rotate: -5 }}
-                 className="flex items-center gap-2 font-black text-orange-500 text-neon-accent italic text-[10px] tracking-[0.3em] uppercase bg-white/5 px-4 py-2 rounded-xl border border-white/5"
-               >
-                 🔥 {streak} DIAS
-               </motion.div>
-             </div>
-             <div className="flex gap-2">
-                <Tooltip text="Configurações">
-                   <motion.button 
-                     whileHover={{ scale: 1.1, rotate: 90 }}
-                     whileTap={{ scale: 0.9 }}
-                     onClick={() => setView('settings')} 
-                     className="w-12 h-12 flex items-center justify-center bg-white/5 rounded-2xl border border-white/10 text-slate-400 hover:text-white transition-all shadow-aaa backdrop-blur-md"
-                   >
-                     <SettingsIcon size={20} />
-                   </motion.button>
-                </Tooltip>
-                
-                <Tooltip text="Sair do Jogo">
-                   <motion.button 
-                     whileHover={{ scale: 1.1, rotate: -10 }}
-                     whileTap={{ scale: 0.9 }}
-                     onClick={logout} 
-                     className="w-12 h-12 flex items-center justify-center bg-rose-500/10 rounded-2xl border border-rose-500/20 text-rose-400 hover:text-rose-500 transition-all shadow-aaa backdrop-blur-md"
-                   >
-                     <LogOut size={20} />
-                   </motion.button>
-                </Tooltip>
-             </div>
-          </header>
-
-          {/* AAA CENTRAL AVATAR & PROGRESS */}
-          <div className="flex flex-col items-center justify-center pt-8 relative">
-             <div className="relative w-52 h-52 flex items-center justify-center mb-6">
-                {/* Background Glows */}
-                <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full animate-pulse" />
-                <div className="absolute inset-0 bg-accent/10 blur-[40px] rounded-full delay-700 animate-pulse" />
-                
-                <svg className="absolute inset-0 w-full h-full -rotate-90 overflow-visible drop-shadow-neon">
-                   <circle cx="104" cy="104" r="75" stroke="rgba(255,255,255,0.03)" strokeWidth="16" fill="none" />
-                   <motion.circle 
-                      cx="104" cy="104" r="75" 
-                      stroke="url(#gradientRingAAA)" 
-                      strokeWidth="16" 
-                      fill="none" 
-                      strokeLinecap="round"
-                      initial={{ strokeDashoffset: 2 * Math.PI * 75 }}
-                      animate={{ strokeDashoffset: (2 * Math.PI * 75) - (ringProgress / 100) * (2 * Math.PI * 75) }}
-                      transition={{ duration: 2.5, type: 'spring', bounce: 0.2 }}
-                      style={{ strokeDasharray: 2 * Math.PI * 75 }}
-                   />
-                   <defs>
-                     <linearGradient id="gradientRingAAA" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="var(--color-primary)" />
-                        <stop offset="100%" stopColor="var(--color-accent)" />
-                     </linearGradient>
-                   </defs>
-                </svg>
-
-                <motion.div 
-                  whileHover={{ scale: 1.05, rotate: 5 }}
-                  className={`w-[140px] h-[140px] rounded-full flex items-center justify-center font-black text-8xl shadow-aaa z-10 border-8 border-[#020617] relative overflow-hidden ${isPremium ? 'bg-gradient-to-tr from-accent/40 to-primary/40' : 'bg-[#0f172a]'}`}
-                >
-                    <span className="relative z-10 filter drop-shadow-2xl">{user.avatar || '👤'}</span>
-                    <div className="absolute inset-0 bg-white/5 animate-pulse" />
-                </motion.div>
-                
-                <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  whileHover={{ scale: 1.1, rotate: -3 }}
-                  className="absolute -bottom-6 z-20"
-                >
-                  <div className="bg-primary text-slate-900 font-black italic uppercase tracking-tighter px-8 py-3 rounded-2xl border-[4px] border-[#020617] text-xl shadow-neon transition-all flex items-center gap-2">
-                    <Award size={22} fill="currentColor" /> 
-                    <span className="brightness-125">NÍVEL {level}</span>
-                  </div>
-                </motion.div>
-             </div>
-             
-             <div className="text-center mt-6 w-full px-8">
-                <h2 className="game-title text-4xl drop-shadow-neon uppercase tracking-tighter mb-2">{user.name}</h2>
-                
-                {/* AAA LINEAR XP BAR */}
-                <div className="relative h-4 bg-white/5 border border-white/10 rounded-full overflow-hidden shadow-inner mb-2">
-                   <motion.div 
-                     initial={{ width: 0 }}
-                     animate={{ width: `${ringProgress}%` }}
-                     transition={{ duration: 1.5, ease: "easeOut" }}
-                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-accent shadow-neon relative overflow-hidden"
-                   >
-                      <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                   </motion.div>
-                </div>
-
-                <div className="flex justify-between items-center px-1">
-                   <span className="text-[8px] font-black uppercase tracking-widest text-primary italic">Nível {level}</span>
-                   <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 italic">{xp % 100}/100 XP</span>
-                </div>
-             </div>
-          </div>
-
-          {/* AAA CALL TO ACTION - GIANT PLAY BUTTON */}
-          <div className="px-2">
-             <motion.button 
-               whileHover={{ scale: 1.05, y: -5 }}
-               whileTap={{ scale: 0.95 }}
-               animate={{ scale: [1, 1.03, 1], rotate: [0, 1, -1, 0] }}
-               transition={{ scale: { repeat: Infinity, duration: 2 }, rotate: { repeat: Infinity, duration: 4 } }}
-               onClick={() => handleStartGame('mixed')}
-               className="btn-play-xl w-full h-24 text-3xl font-black italic shadow-neon flex items-center justify-center gap-6 group transition-all relative overflow-hidden"
-             >
-               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-               <Play fill="currentColor" size={32} className="group-hover:scale-125 transition-transform" /> 
-               JOGAR AGORA
-             </motion.button>
-          </div>
-
-          {/* AAA PROVA PENDENTE */}
-          {provaAtiva && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="mx-2 glass-card p-6 border-warning/50 bg-warning/5 flex items-center justify-between shadow-aaa relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-warning/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              <div className="flex items-center gap-5 z-10">
-                <div className="w-14 h-14 bg-warning/20 rounded-2xl flex items-center justify-center text-warning shadow-neon-accent rotate-3 group-hover:rotate-12 transition-transform"><Award size={28}/></div>
-                <div>
-                  <p className="font-black uppercase text-warning text-neon text-sm tracking-tight italic">Prova Aberta!</p>
-                  <p className="text-xs text-white/50 font-bold uppercase tracking-widest mt-0.5">{provaAtiva.titulo}</p>
-                </div>
-              </div>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setView('prova')}
-                className="btn-premium btn-success !min-h-[48px] px-8 text-sm shadow-neon-success font-black italic z-10"
+        <div className="flex flex-col items-center w-full min-h-screen bg-[#020617] text-white relative overflow-hidden pb-28">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.1),transparent_50%)] pointer-events-none" />
+          
+          <main className="flex-1 w-full max-w-xl mx-auto p-6 relative z-10 flex flex-col items-center">
+            {/* TOPO: AVATAR */}
+            <div className="flex flex-col items-center mb-8 w-full mt-6">
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }}
+                className="avatar w-28 h-28 rounded-full bg-gradient-to-tr from-cyan-400 to-purple-600 p-[3px] mb-4 shadow-[0_0_40px_rgba(34,211,238,0.3)] relative"
               >
-                ENTRAR →
-              </motion.button>
-            </motion.div>
-          )}
+                <div className="w-full h-full bg-[#020617] rounded-full flex items-center justify-center text-5xl">
+                  {user?.avatar || '😁'}
+                </div>
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[11px] font-black italic px-4 py-1.5 rounded-full border-2 border-[#020617] shadow-lg uppercase tracking-wider whitespace-nowrap">
+                  Nível {level}
+                </div>
+              </motion.div>
+              <h2 className="text-3xl font-extrabold tracking-tight text-white mb-2 text-center">{user?.name || "Jogador"}</h2>
+              <div className="w-full max-w-[220px] bg-white/10 rounded-full h-4 border border-white/5 relative overflow-hidden shadow-inner">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(xp % 100, 100)}%` }}
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full"
+                />
+              </div>
+              <div className="text-[11px] text-gray-400 font-bold tracking-widest uppercase mt-2">{xp % 100} / 100 XP</div>
+            </div>
 
-          {/* AAA MISSÕES DIÁRIAS */}
-          <div className="px-2">
-             <h3 className="game-title text-[10px] text-slate-500 mb-6 opacity-60 flex items-center gap-3 tracking-[0.4em] uppercase font-black">
-               <Star size={14} fill="currentColor" className="text-accent" /> 
-               Desafios do Dia
-             </h3>
-             <div className="space-y-4">
-               {missions.slice(0, 2).map((m, i) => (
-                 <motion.div 
-                   key={m.id} 
-                   initial={{ opacity: 0, scale: 0.95 }}
-                   animate={{ opacity: 1, scale: 1 }}
-                   transition={{ delay: i * 0.1 }}
-                   className={`glass-card p-5 flex flex-col gap-4 relative overflow-hidden group transition-all duration-700 shadow-aaa ${m.done ? 'border-success/40 bg-success/5 shadow-neon-success' : 'border-white/5'}`}
-                 >
-                   <div className="flex justify-between items-center relative z-10">
-                     <p className={`text-sm font-black uppercase italic tracking-tighter ${m.done ? 'text-success' : 'text-slate-100'}`}>{m.desc}</p>
-                     <span className={`text-[10px] px-4 py-1.5 rounded-xl font-black italic tracking-widest ${m.done ? 'bg-success text-slate-900 shadow-neon-success' : 'bg-primary/20 text-primary border border-primary/30 uppercase'}`}>
-                       +{m.reward} XP
-                     </span>
-                   </div>
-                   <div className="hud-progress-bg w-full h-3 p-[1px]">
-                     <motion.div 
-                       initial={{ width: 0 }}
-                       animate={{ width: `${Math.min(100, (m.prog / m.target) * 100)}%` }}
-                       className={`h-full rounded-full relative overflow-hidden ${m.done ? 'bg-success shadow-neon-success' : 'bg-primary shadow-neon'}`}
-                     >
-                        <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.3)_50%,transparent_100%)] animate-[shimmer_2s_infinite]" />
-                     </motion.div>
-                   </div>
-                 </motion.div>
-               ))}
-             </div>
-          </div>
+            {/* CTA */}
+            <motion.button
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => handleStartGame('mixed')}
+              className="w-full max-w-md cta-main mb-10 py-7 rounded-[28px] text-white flex flex-col items-center justify-center gap-1 border border-white/20 relative overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="text-5xl drop-shadow-md mb-1">🚀</span>
+              <span className="text-3xl font-black italic tracking-wide drop-shadow-lg">JOGAR AGORA</span>
+            </motion.button>
 
-          {/* AAA TRILHAS DE APRENDIZADO */}
-          <div className="px-2">
-             <h3 className="game-title text-[10px] text-slate-500 mb-6 opacity-60 flex items-center gap-3 tracking-[0.4em] uppercase font-black">
-               <Target size={14} className="text-primary"/> 
-               Explorar Trilhas
-             </h3>
-             <div className="grid grid-cols-2 gap-4">
-                {filteredModules.map((m, i) => (
-                   <motion.button 
-                     key={m.id} 
-                     initial={{ opacity: 0, y: 20 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     transition={{ delay: i * 0.05 }}
-                     whileHover={{ scale: 1.05, y: -5 }} 
-                     whileTap={{ scale: 0.95 }} 
-                     onClick={() => { setSelectedModule(m.id); setView('play'); }} 
-                     className={`glass-card p-6 border-b-[8px] active:border-b-0 active:translate-y-2 relative overflow-hidden group shadow-aaa ${m.id === 'tabuada_pro' ? 'border-amber-500/50 bg-amber-500/5' : 'border-white/10'}`}
-                   >
-                     <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                     <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${m.color} text-white shadow-aaa flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all border-2 border-white/10`}>
-                       {React.cloneElement(m.icon, { size: 32 })}
-                     </div>
-                     <span className="font-black text-xs uppercase tracking-tight italic text-left leading-tight group-hover:text-primary transition-colors block">{m.name}</span>
-                   </motion.button>
-                ))}
-             </div>
-          </div>
+            {/* MISSÕES */}
+            <div className="w-full mb-8">
+              <h3 className="text-xl font-extrabold text-white tracking-tight mb-5 px-1">Missões Mágicas</h3>
+              
+              {/* TABUADA HERO CARD — full width, expandido */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
+                onClick={() => { setSelectedModule('tabuada_pro'); setView('play'); }}
+                className="card-game highlight-card mb-4 p-6 flex flex-row items-center justify-between cursor-pointer w-full bg-gradient-to-br from-amber-400 to-orange-600 text-white border-2 border-yellow-300/60 ring-2 ring-yellow-300/30 relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-3xl -mr-14 -mt-14 pointer-events-none" />
+                <div className="flex flex-col gap-1">
+                  <div className="bg-black/20 text-yellow-100 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest w-fit mb-1">⭐ Modo Destaque</div>
+                  <span className="text-3xl font-black italic drop-shadow-lg">Tabuada 0–10</span>
+                  <span className="text-sm opacity-80 font-medium">Multiplicação organizada, passo a passo</span>
+                </div>
+                <span className="text-6xl drop-shadow-md">⭐</span>
+              </motion.div>
+
+              {/* GRID 2-colunas para os demais cards */}
+              <div className="grid grid-cols-2 gap-4">
+                {regularCards.map((item, i) => {
+                  const cardColor = gameColors[i % gameColors.length];
+                  return (
+                    <motion.div
+                      key={item.id + i}
+                      initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i + 1) * 0.05 }}
+                      onClick={() => { setSelectedModule(item.id); setView('play'); }}
+                      className={`card-game p-5 flex flex-col justify-between cursor-pointer min-h-[130px] ${cardColor} text-white relative overflow-hidden border border-white/20`}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+                      <div className="text-2xl mb-2">{item.emoji}</div>
+                      <span className="font-extrabold text-base leading-tight tracking-tight drop-shadow-md">{item.name}</span>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </main>
+
+          {/* BOTTOM NAV */}
+          <BottomNav view="menu" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} />
+        </div>
+      );
+    };
+
+    // Componente de navegação inferior reutilizável em todas as telas
+    const BottomNav = ({ view: activeView, setView, isPremium, settings, setSettings, logout }) => {
+      const isMusicOn = settings?.musicEnabled !== false;
+      const nav = [
+        { id: 'menu',    icon: '🏠', label: 'Início',   active: activeView === 'menu' },
+        { id: 'ranking', icon: '🏆', label: 'Ranking',  active: activeView === 'ranking' },
+        ...(isPremium ? [{ id: 'teacher', icon: '👑', label: 'Professor', active: activeView === 'teacher', gold: true }] : []),
+        { id: 'settings',icon: '⚙️', label: 'Perfil',   active: activeView === 'settings' },
+      ];
+      return (
+        <div className="fixed bottom-0 left-0 w-full glass rounded-t-3xl pt-2 pb-4 px-4 flex justify-around items-center z-50">
+          {nav.map(n => (
+            <button
+              key={n.id}
+              onClick={() => { if (settings?.soundEnabled) playSound.click(); setView(n.id); }}
+              className={`flex flex-col items-center p-2 transition transform hover:scale-110 ${
+                n.active ? 'text-cyan-400' : n.gold ? 'text-amber-500 hover:text-amber-300' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <span className="text-2xl mb-1">{n.icon}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wide">{n.label}</span>
+            </button>
+          ))}
+          {/* Music toggle */}
+          <button
+            onClick={() => {
+              const newOn = !isMusicOn;
+              setSettings(s => ({ ...s, musicEnabled: newOn }));
+              playSound.setMuted(!newOn);
+              if (!newOn) playSound.stopBGM(); else playSound.startBGM();
+            }}
+            className="flex flex-col items-center p-2 text-gray-400 hover:text-white transition transform hover:scale-110"
+          >
+            <span className="text-2xl mb-1">{isMusicOn ? '🔊' : '🔇'}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide">Música</span>
+          </button>
+          {/* Logout */}
+          <button
+            onClick={() => logout()}
+            className="flex flex-col items-center p-2 text-red-400 hover:text-red-300 transition transform hover:scale-110"
+          >
+            <span className="text-2xl mb-1">🚪</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide">Sair</span>
+          </button>
         </div>
       );
     };
 
 
+  const isGameOrProva = view === 'play' || view === 'prova';
+
   return (
-    <div className="min-h-screen pb-24 flex flex-col bg-[#020617] text-slate-100 font-sans selection:bg-primary selection:text-slate-900 overflow-x-hidden">
-      <main className="flex-1 p-2">
-        <AnimatePresence mode="wait">
-          {(() => {
-            // Role Guards: Segurança de Rota SaaS
-            if (user?.role === 'student' && view === 'teacher') {
-               setView('menu');
-               return null;
-            }
+    <>
+      <ParticleBackground />
 
-            if (view === 'menu') return <motion.div key="menu" initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }}><Dashboard /></motion.div>;
-            if (view === 'ranking') return <motion.div key="ranking" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }}>
-              <div className="max-w-4xl mx-auto px-4 pt-4 flex items-center justify-between">
-                <AppLogo onClick={() => { setView('menu'); setSelectedModule(null); }} />
-                <div className="h-px flex-1 bg-white/5 mx-4" />
-              </div>
-              <RankingView user={user} xp={xp} level={level} stats={stats} turma={turma} joinTurma={joinTurma} onBack={() => { setView(user.role === 'teacher' ? 'teacher' : 'menu'); setSelectedModule(null); }} />
-            </motion.div>;
-            if (view === 'teacher') return <motion.div key="teacher" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }}>
-              <div className="max-w-4xl mx-auto px-4 pt-4 flex items-center justify-between">
-                 <AppLogo onClick={() => { setView('menu'); setSelectedModule(null); }} />
-                 <div className="h-px flex-1 bg-white/5 mx-4" />
-              </div>
-              <TeacherDashboard user={user} plan={plan} isPremium={isPremium} onBack={() => { setView('menu'); setSelectedModule(null); }} selectedTurma={selectedTurma} setSelectedTurma={setSelectedTurma} lastTurmaId={lastTurmaId} />
-            </motion.div>;
-            if (view === 'stats') return <motion.div key="stats" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }}>
-              <div className="max-w-2xl mx-auto px-2 pt-4"><AppLogo onClick={() => { setView(user.role === 'teacher' ? 'teacher' : 'menu'); setSelectedModule(null); }} /></div>
-              <StatsView stats={stats} onBack={() => { setView(user.role === 'teacher' ? 'teacher' : 'menu'); setSelectedModule(null); }} />
-            </motion.div>;
-            if (view === 'settings') return <motion.div key="settings" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -50, opacity: 0 }}>
-               <div className="max-w-2xl mx-auto px-2 pt-4"><AppLogo onClick={() => { setView(user.role === 'teacher' ? 'teacher' : 'menu'); setSelectedModule(null); }} /></div>
-               <SettingsView user={user} isPremium={isPremium} setIsPremium={setIsPremium} setAvatar={setAvatar} settings={settings} setSettings={setSettings} grade={grade} setGrade={setGrade} onBack={() => { setView(user.role === 'teacher' ? 'teacher' : 'menu'); setSelectedModule(null); }} resetProgress={resetProgress} logout={logout} setAuthLoading={setAuthLoading} />
-            </motion.div>;
-            return null;
-          })()}
-        </AnimatePresence>
-      </main>
+      {/* Roteamento Principal (Sem Layout Excedente, o Dashboard já fornece o layout raiz base) */}
+      <AnimatePresence mode="wait">
+        {(() => {
+          // Role Guards: Segurança de Rota SaaS
+          if (user?.role === 'student' && view === 'teacher') {
+             setView('menu');
+             return null;
+          }
 
-      <nav className="fixed bottom-0 left-0 right-0 glass-card mx-4 mb-4 p-2 flex justify-around items-center border-white/10 shadow-glass z-50 bg-[#020617]/80 backdrop-blur-xl">
-        <SoftAmbientMusic enabled={settings?.musicEnabled} />
-        <Tooltip text="Menu Principal">
-          <button onClick={() => { setView('menu'); setSelectedModule(null); setProvaAtiva(null); }} className={`p-4 rounded-2xl transition-all ${user.role === 'student' && view === 'menu' ? 'bg-primary text-slate-900 shadow-neon' : user.role === 'teacher' && view === 'teacher' ? 'opacity-50 grayscale' : view === 'menu' ? 'bg-primary text-slate-900 shadow-neon' : 'text-slate-500 hover:text-slate-100'}`}>
-            {user.role === 'teacher' ? <Users size={24} /> : <Play size={24} fill="currentColor" />}
-          </button>
-        </Tooltip>
-        <Tooltip text="Ranking Social">
-          <button onClick={() => setView('ranking')} className={`p-4 rounded-2xl transition-all ${view === 'ranking' ? 'bg-primary text-slate-900 shadow-neon' : 'text-slate-500 hover:text-slate-100'}`}><Trophy size={24} /></button>
-        </Tooltip>
-        <Tooltip text="Painel do Professor (Premium)">
-          <button onClick={() => {
-             if (!isPremium) {
-                alert("⭐ O Painel VIP do Professor é exclusivo para assinantes Premium! Assine na tela inicial.");
-                return;
-             }
-             setView('teacher');
-          }} className={`p-4 rounded-2xl transition-all relative ${view === 'teacher' ? 'bg-primary text-slate-900 shadow-neon' : 'text-slate-500 hover:text-slate-100'}`}>
-             <Users size={24} />
-             {isPremium && <Crown size={10} className={`absolute top-2 right-2 ${view === 'teacher' ? 'text-slate-900' : 'text-accent'}`} />}
-          </button>
-        </Tooltip>
-        <Tooltip text="Ouro Diário">
-          <button onClick={handleClaimDaily} className={`p-4 rounded-2xl transition-all relative ${claimedDaily ? 'text-slate-600 opacity-50 grayscale' : 'text-accent animate-pulse'}`}>
-            <Star size={24} fill={claimedDaily ? 'none' : 'currentColor'} />
-            {!claimedDaily && <div className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full border-2 border-[#020617] animate-ping" />}
-          </button>
-        </Tooltip>
-      </nav>
-
-      {/* Overlays Globais */}
-      <AnimatePresence>
-        {showLevelUp && (
-          <LevelUpCelebration 
-            level={celebrationLevel} 
-            onComplete={() => setShowLevelUp(false)} 
-          />
-        )}
+          if (view === 'menu') return <motion.div key="menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><Dashboard /></motion.div>;
+          
+          if (view === 'ranking') return <motion.div key="ranking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><RankingView user={user} xp={xp} level={level} stats={stats} turma={turma} joinTurma={joinTurma} onBack={() => { setView('menu'); setSelectedModule(null); }} /><BottomNav view="ranking" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} /></motion.div>;
+          
+          if (view === 'teacher') return <motion.div key="teacher" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><TeacherDashboard user={user} plan={plan} isPremium={isPremium} onBack={() => { setView('menu'); setSelectedModule(null); }} selectedTurma={selectedTurma} setSelectedTurma={setSelectedTurma} lastTurmaId={lastTurmaId} /><BottomNav view="teacher" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} /></motion.div>;
+          
+          if (view === 'stats') return <motion.div key="stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><StatsView stats={stats} onBack={() => { setView('menu'); setSelectedModule(null); }} /><BottomNav view="stats" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} /></motion.div>;
+          
+          if (view === 'settings') return <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><SettingsView user={user} isPremium={isPremium} setIsPremium={setIsPremium} setAvatar={setAvatar} settings={settings} setSettings={setSettings} grade={grade} setGrade={setGrade} onBack={() => { setView('menu'); setSelectedModule(null); }} resetProgress={resetProgress} logout={logout} setAuthLoading={setAuthLoading} /><BottomNav view="settings" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} /></motion.div>;
+          return null;
+        })()}
       </AnimatePresence>
 
-      <Mascot floating expression="happy" message={mascotMsg} />
-    </div>
+      <div className={`${isGameOrProva ? '' : 'hidden md:block'}`}>
+         <Mascot floating expression="happy" message={mascotMsg} size="small" />
+      </div>
+
+      <SoftAmbientMusic enabled={settings?.musicEnabled} />
+    </>
   );
 };
 
