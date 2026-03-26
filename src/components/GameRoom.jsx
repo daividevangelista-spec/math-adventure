@@ -53,7 +53,9 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
             // Time's up – finish exam
             clearInterval(interval);
             const duration = (Date.now() - prev.startTime) / 1000;
-            modoProva.onConcluir(prev.correct, prev.total, duration);
+            if (modoProva?.onConcluir) {
+              modoProva.onConcluir(prev.correct, prev.total, duration);
+            }
             return { ...prev, examTimeLeft: 0 };
           }
           return { ...prev, examTimeLeft: newLeft };
@@ -93,6 +95,11 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
       };
       const availableModules = gradeModules[grade] || gradeModules['3º'];
       currentMode = availableModules[Math.floor(Math.random() * availableModules.length)];
+    }
+
+    if (settings?.timerEnabled) {
+      const seconds = currentMode === 'tabuada_pro' ? 60 : (settings.timerSeconds || 15);
+      setTimeLeft(seconds);
     }
 
     if (currentMode === 'tabuada_pro') return;
@@ -181,10 +188,6 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
     
     setUserInput('');
     setFeedback(null);
-    if (settings?.timerEnabled) {
-      const seconds = settings.timerSeconds || 15;
-      setTimeLeft(seconds);
-    }
   };
 
   React.useEffect(() => {
@@ -192,7 +195,7 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
   }, [mode]);
 
   React.useEffect(() => {
-    if (settings?.timerEnabled && !feedback && mode !== 'tabuada_pro') {
+    if (settings?.timerEnabled && !feedback) {
       timerRef.current = setInterval(() => {
         setTimeLeft(t => {
           if (t <= 1) { handleWrong(); return 0; }
@@ -218,7 +221,17 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
     if (modoProva) {
       setExamState(prev => ({ ...prev, total: prev.total + 1 }));
     }
-    setTimeout(generateQuestion, 2000);
+
+    if (mode === 'tabuada_pro') {
+       setTimeout(() => {
+          setTabuAnswers(Array(11).fill(''));
+          setTabuFeedback(Array(11).fill(null));
+          setFeedback(null);
+          setTimeLeft(settings?.timerSeconds === 15 ? 45 : settings?.timerSeconds || 15);
+       }, 2000);
+    } else {
+       setTimeout(generateQuestion, 2000);
+    }
   };
 
   const handleAction = (val) => {
@@ -277,11 +290,13 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
       setEarnedXp(2);
       setTimeout(() => setEarnedXp(null), 1500);
       setTimeout(() => {
-        for (let n = idx + 1; n < 11; n++) {
-          if (inputRefs.current[n] && !inputRefs.current[n].disabled) {
-            inputRefs.current[n].focus();
-            break;
-          }
+        // Find FIRST available input that isn't correct yet
+        const nextIdx = [...Array(11).keys()]
+          .map(i => (i + idx + 1) % 11) // start from next, wrap around
+          .find(i => inputRefs.current[i] && !inputRefs.current[i].disabled);
+        
+        if (nextIdx !== undefined && inputRefs.current[nextIdx]) {
+          inputRefs.current[nextIdx].focus();
         }
       }, 50);
     } else if (val.length >= expected.toString().length) {
@@ -397,7 +412,7 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
                   </motion.div>
                 </div>
               </div>
-            ) : (settings?.timerEnabled && mode !== 'tabuada_pro' && (
+            ) : (settings?.timerEnabled && (
               <div className="flex flex-col items-center gap-2">
                 <motion.div 
                    animate={timeLeft < 5 ? { scale: [1, 1.1, 1], y: [0, -2, 0] } : {}}
@@ -462,28 +477,28 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
 
         {/* AAA MAIN GAME AREA */}
         {mode === 'tabuada_pro' ? (
-          <div className="flex-1 flex flex-col items-center py-4 space-y-8 overflow-y-auto custom-scrollbar relative z-10">
+          <div className="flex-1 flex flex-col items-center py-2 space-y-6 overflow-y-auto custom-scrollbar relative z-10 w-full">
             <motion.h1 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="game-title text-5xl text-center italic tracking-tighter leading-none"
+              className="game-title text-4xl text-center italic tracking-tighter leading-none"
             >
               DOMÍNIO DA<br/>
-              <span className="text-gradient-gold drop-shadow-neon-accent uppercase text-6xl">TABUADA DO {tabuadaBase}</span>
+              <span className="text-gradient-gold drop-shadow-neon-accent uppercase text-5xl">TABUADA DO {tabuadaBase}</span>
             </motion.h1>
             
-            <div className="glass-card w-full max-w-sm p-8 grid gap-4 border-white/10 shadow-aaa backdrop-blur-2xl relative overflow-hidden group">
+            <div className="glass-card w-full max-w-2xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 border-white/10 shadow-aaa backdrop-blur-2xl relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-30 pointer-events-none" />
               {Array.from({ length: 11 }).map((_, i) => (
                 <motion.div 
                   key={i} 
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="flex items-center justify-between gap-6 p-1 rounded-2xl hover:bg-white/[0.03] transition-all group/item"
+                  transition={{ delay: i * 0.03 }}
+                  className="flex items-center justify-between gap-4 p-1.5 rounded-xl hover:bg-white/[0.03] transition-all group/item border border-white/5"
                 >
-                  <span className="text-3xl font-black italic text-slate-300 drop-shadow-sm group-hover/item:text-white transition-colors">
-                    {tabuadaBase} <span className="text-primary mx-1">×</span> {i} <span className="text-slate-600">=</span>
+                  <span className="text-2xl font-black italic text-slate-300 drop-shadow-sm group-hover/item:text-white transition-colors">
+                    {tabuadaBase} <span className="text-primary mx-0.5">×</span> {i} <span className="text-slate-600">=</span>
                   </span>
                   <input 
                     ref={el => inputRefs.current[i] = el}
@@ -492,9 +507,9 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
                     value={tabuAnswers[i]}
                     onChange={(e) => handleTabuInput(i, e.target.value)}
                     disabled={tabuFeedback[i] === 'correct'}
-                    className={`w-32 bg-[#020617]/80 border-2 rounded-2xl py-3 px-4 text-3xl text-center font-black italic focus:outline-none transition-all shadow-input ${
+                    className={`w-24 bg-[#020617]/80 border-2 rounded-xl py-2 px-3 text-2xl text-center font-black italic focus:outline-none transition-all shadow-input ${
                       tabuFeedback[i] === 'correct' ? 'border-success bg-success/10 text-success shadow-neon-success scale-105' :
-                      tabuFeedback[i] === 'wrong' ? 'border-error bg-error/5 text-error animate-shake shadow-neon-error' : 'border-white/5 focus:border-primary/50'
+                      tabuFeedback[i] === 'wrong' ? 'border-error bg-error/5 text-error animate-shake shadow-neon-error' : 'border-white/10 focus:border-primary/50'
                     }`}
                   />
                 </motion.div>

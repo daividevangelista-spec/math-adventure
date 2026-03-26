@@ -21,6 +21,8 @@ export const useGameState = () => {
   const [plan, setPlan] = React.useState('free');
   const [claimedDaily, setClaimedDaily] = React.useState(false);
   const [settings, setSettings] = React.useState({
+    timerEnabled: true,
+    timerSeconds: 15,
     soundEnabled: true,
     voiceEnabled: true,
     musicEnabled: true,
