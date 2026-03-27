@@ -278,7 +278,7 @@ export const authAPI = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { 
-        redirectTo: import.meta.env.VITE_APP_URL,
+        redirectTo: window.location.origin,
         queryParams: { prompt: 'select_account' }
       }
     });
@@ -354,7 +354,8 @@ export const authAPI = {
         // Criar perfil se não existir
         const newProfile = {
           id: user.id,
-          name: user.user_metadata?.name || user.email?.split('@')[0] || 'Usuário',
+          name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
+          email: user.email,
           role: user.user_metadata?.role || (isAdmin ? 'teacher' : 'student'),
           plan: user.user_metadata?.plan || (isAdmin ? 'premium' : 'free')
         };

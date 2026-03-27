@@ -1756,42 +1756,42 @@ const AppContent = () => {
 
   // Check for existing session on mount (handles OAuth redirect back)
   React.useEffect(() => {
-    console.log("🛠️ Inicializando Autenticação...");
-
-    // Timeout de segurança longo (30s) para garantir que no cold start do Supabase a UI não bloqueie.
+    // Timeout de segurança (15s)
     const authTimeout = setTimeout(() => {
       setAuthLoading(false);
-      console.warn("⚠️ Auth check timed out - unlocking UI as fallback");
-    }, 30000);
+      console.warn("⚠️ Auth check timed out");
+    }, 15000);
 
-    const { data: { subscription } } = authAPI.onAuthStateChange(async (event, session) => {
-      console.log(`🔔 Auth Event: ${event}`);
-      
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
-        // Clear timeout if we have a session event early
-        // Note: we only clear if we are SURE we processed the profile
-        
-        if (globalSessionId === session.user.id) {
-          console.log("⏭️ Ignorando evento de login repetido para:", session.user.id);
-          setAuthLoading(false);
-          clearTimeout(authTimeout);
-          return;
-        }
-        
-        console.log("🔐 Novo login detectado:", session.user.id);
-        globalSessionId = session.user.id;
-        
-        // Limpar fragmento da URL após recuperar a sessão (evita que o gotrue tente re-usar o mesmo hash no refresh)
+    const checkSession = async () => {
+      const { data: { session } } = await authAPI.getSession();
+      if (session) {
+        console.log("⚡ Sessão inicial encontrada:", session.user.id);
         if (window.location.hash) {
           window.history.replaceState(null, null, window.location.pathname);
         }
+        await loginWithSession(session);
+        setAuthLoading(false);
+      } else {
+        // Se não houver sessão imediata, o onAuthStateChange cuidará disso
+        // mas damos um pequeno delay para o authLoading
+        setTimeout(() => setAuthLoading(false), 1500);
+      }
+    };
 
+    checkSession();
+
+    const { data: { subscription } } = authAPI.onAuthStateChange(async (event, session) => {
+      console.log(`🔔 Evento Auth: ${event}`);
+
+      if (event === 'SIGNED_IN' && session) {
+        if (window.location.hash) {
+          window.history.replaceState(null, null, window.location.pathname);
+        }
         const meta = session.user.user_metadata || {};
         if (!meta.name) {
           setPendingSession(session);
           setShowSetup(true);
           setAuthLoading(false);
-          clearTimeout(authTimeout);
         } else {
           // Utiliza setTimeout para tirar do event loop do auth e prevenir deadlock do gotrue-js
           setTimeout(async () => {
