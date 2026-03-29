@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Privacy from "./Privacy";
 import * as React from 'react';
+import useMusicPlayer from './hooks/useMusicPlayer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trophy, Settings as SettingsIcon, BarChart2, Play, 
@@ -51,75 +52,6 @@ const AppLogo = ({ onClick, className = "" }) => (
   </div>
 );
 
-const SoftAmbientMusic = ({ enabled }) => {
-  const audioCtxRef = React.useRef(null);
-  const oscillatorsRef = React.useRef([]);
-
-  React.useEffect(() => {
-    if (!enabled) {
-      if (audioCtxRef.current) {
-        audioCtxRef.current.close();
-        audioCtxRef.current = null;
-      }
-      return;
-    }
-
-    const startAudio = () => {
-      if (audioCtxRef.current) return;
-      
-      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      const masterGain = audioCtxRef.current.createGain();
-      masterGain.gain.setValueAtTime(0, audioCtxRef.current.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.05, audioCtxRef.current.currentTime + 2);
-      masterGain.connect(audioCtxRef.current.destination);
-
-      const freqs = [130.81, 164.81, 196.00, 246.94]; // C3, E3, G3, B3 (Cmaj7)
-      
-      freqs.forEach((f, i) => {
-        const osc = audioCtxRef.current.createOscillator();
-        const g = audioCtxRef.current.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, audioCtxRef.current.currentTime);
-        
-        // LFO for "breathing" effect
-        const lfo = audioCtxRef.current.createOscillator();
-        const lfoGain = audioCtxRef.current.createGain();
-        lfo.frequency.setValueAtTime(0.1 + i * 0.05, audioCtxRef.current.currentTime);
-        lfoGain.gain.setValueAtTime(0.02, audioCtxRef.current.currentTime);
-        
-        lfo.connect(lfoGain);
-        lfoGain.connect(g.gain);
-        
-        osc.connect(g);
-        g.connect(masterGain);
-        
-        osc.start();
-        lfo.start();
-        oscillatorsRef.current.push(osc, lfo);
-      });
-    };
-
-    const handleInteraction = () => {
-      startAudio();
-      window.removeEventListener('mousedown', handleInteraction);
-      window.removeEventListener('keydown', handleInteraction);
-    };
-
-    window.addEventListener('mousedown', handleInteraction);
-    window.addEventListener('keydown', handleInteraction);
-
-    return () => {
-      window.removeEventListener('mousedown', handleInteraction);
-      window.removeEventListener('keydown', handleInteraction);
-      if (audioCtxRef.current) {
-        audioCtxRef.current.close();
-        audioCtxRef.current = null;
-      }
-    };
-  }, [enabled]);
-
-  return null;
-};
 
 const NotificationService = {
   notify: (title, message, type = 'success') => {
@@ -1631,6 +1563,8 @@ const AppContent = () => {
     login, loginWithSession, setupProfile, logout, addXp, setAvatar, resetProgress, setGrade, setTabuadaBase, joinTurma, setIsPremium, setSettings, setClaimedDaily
   } = useGameState();
 
+  const { toggleMusic, isPlaying: musicPlaying } = useMusicPlayer();
+
   const [view, setView] = React.useState(() => {
     // Busca inicial síncrona para evitar "flicker" de tela inicial
     return localStorage.getItem('math_adventure_last_view') || 'menu';
@@ -1639,27 +1573,11 @@ const AppContent = () => {
   const [showSetup, setShowSetup] = React.useState(false);
   const [pendingSession, setPendingSession] = React.useState(null);
 
-  const [audioMuted, setAudioMuted] = React.useState(false);
-  const toggleAudio = () => {
-    const newMutedState = !audioMuted;
-    playSound.setMuted(newMutedState);
-    setAudioMuted(newMutedState);
-    if (newMutedState) playSound.stopBGM();
-    else playSound.startBGM(); 
-  };
 
   // --- MOVED HOOKS (Ensuring they are called before any early returns) ---
   const [setupName, setSetupName] = React.useState('');
   const [setupGrade, setSetupGrade] = React.useState('3º');
 
-  // --- AUDIO & BGM LIFECYCLE ---
-  React.useEffect(() => {
-    if (user && settings?.soundEnabled) {
-      playSound.startBGM();
-    } else {
-      playSound.stopBGM();
-    }
-  }, [user, settings?.soundEnabled]);
 
   // Unlock AudioContext on first interaction
   React.useEffect(() => {
@@ -2103,17 +2021,12 @@ const AppContent = () => {
               <span className="text-[10px] font-bold uppercase tracking-wide">{n.label}</span>
             </button>
           ))}
-          {/* Music toggle */}
+          {/* Music Toggle */}
           <button
-            onClick={() => {
-              const newOn = !isMusicOn;
-              setSettings(s => ({ ...s, musicEnabled: newOn }));
-              playSound.setMuted(!newOn);
-              if (!newOn) playSound.stopBGM(); else playSound.startBGM();
-            }}
-            className="flex flex-col items-center p-2 text-gray-400 hover:text-white transition transform hover:scale-110"
+            onClick={toggleMusic}
+            className={`flex flex-col items-center p-2 transition transform hover:scale-110 music-btn ${musicPlaying ? 'text-cyan-400' : 'text-gray-400 hover:text-white'}`}
           >
-            <span className="text-2xl mb-1">{isMusicOn ? '🔊' : '🔇'}</span>
+            <span className="text-2xl mb-1">{musicPlaying ? '🔊' : '🔇'}</span>
             <span className="text-[10px] font-bold uppercase tracking-wide">Música</span>
           </button>
           {/* Logout */}
@@ -2157,11 +2070,10 @@ const AppContent = () => {
         })()}
       </AnimatePresence>
 
+
       <div className={`${isGameOrProva ? '' : 'hidden md:block'}`}>
          <Mascot floating expression="happy" message={mascotMsg} size="small" />
       </div>
-
-      <SoftAmbientMusic enabled={settings?.musicEnabled} />
     </>
   );
 };

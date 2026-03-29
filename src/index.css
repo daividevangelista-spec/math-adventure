@@ -592,3 +592,24 @@ button {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(0,229,255,0.6);
 }
+
+/* ============================================
+   MUSIC PLAYER UI
+   ============================================ */
+.music-btn {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.music-btn:hover {
+  transform: scale(1.1) translateY(-2px);
+  filter: brightness(1.2);
+}
+
+.music-btn:active {
+  transform: scale(0.95);
+}
+
+.music-btn.text-cyan-400 {
+  text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+}
