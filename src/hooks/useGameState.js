@@ -249,12 +249,26 @@ export const useGameState = () => {
     }
   };
 
-  const setAvatar = (newAvatar) => {
+  const setAvatar = async (newAvatar) => {
+    // 1. Atualizar Estado Local
     setUser(prev => ({ 
       ...prev, 
       avatar: newAvatar, 
       lastAvatarChange: Date.now() 
     }));
+
+    // 2. Persistir no Supabase se logado (Evita que o avatar "volte" ao antigo)
+    if (user?.id) {
+        try {
+            await authAPI.updateProfile({ 
+                ...user, 
+                avatar: newAvatar 
+            });
+            console.log("✅ Avatar sincronizado com sucesso!");
+        } catch (e) {
+            console.warn("⚠️ Falha ao sincronizar avatar com DB:", e.message);
+        }
+    }
   };
 
   const addXp = (amount, isCorrect = true, operation = 'soma') => {

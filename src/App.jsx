@@ -140,39 +140,58 @@ const LevelUpCelebration = ({ level, onComplete }) => {
   );
 };
 
+const PREMIUM_AVATARS = [
+  { id: 'avatar1', url: '/avatars/avatar1.png', minLevel: 0 },
+  { id: 'avatar2', url: '/avatars/avatar2.png', minLevel: 5 },
+  { id: 'avatar3', url: '/avatars/avatar3.png', minLevel: 10 },
+  { id: 'avatar4', url: '/avatars/avatar4.png', minLevel: 15 },
+  { id: 'avatar5', url: '/avatars/avatar5.png', minLevel: 25 },
+];
+
+const getGamingTitle = (level) => {
+  if (level >= 100) return "Lenda da Matemática";
+  if (level >= 50) return "Elite do Cálculo";
+  if (level >= 30) return "Mestre Matemático";
+  if (level >= 20) return "Estudioso";
+  if (level >= 10) return "Aprendiz";
+  return "Novato";
+};
 
 
-const Header = ({ title, onBack }) => (
-  <div className="flex justify-between items-center mb-8 px-2 relative z-10">
-    <div className="flex items-center gap-4">
-      {onBack && (
-        <motion.button 
-          whileHover={{ scale: 1.1, x: -2 }} 
-          whileTap={{ scale: 0.9 }} 
-          onClick={onBack} 
-          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-aaa"
-        >
-          <ArrowLeft size={18} />
-        </motion.button>
-      )}
-      <div className="flex flex-col">
-        <h2 className="game-title text-2xl tracking-tighter text-neon">{title}</h2>
-        <div className="h-0.5 w-1/2 bg-gradient-to-r from-primary to-transparent opacity-50" />
+
+function Header({ title, streak = 0, onBack }) {
+  return (
+    <div className="flex justify-between items-center mb-8 px-2 relative z-10">
+      <div className="flex items-center gap-4">
+        {onBack && (
+          <motion.button 
+            whileHover={{ scale: 1.1, x: -2 }} 
+            whileTap={{ scale: 0.9 }} 
+            onClick={onBack} 
+            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-aaa"
+          >
+            <ArrowLeft size={18} />
+          </motion.button>
+        )}
+        <div className="flex flex-col">
+          <h2 className="game-title text-2xl tracking-tighter text-neon">{title}</h2>
+          <div className="h-0.5 w-1/2 bg-gradient-to-r from-primary to-transparent opacity-50" />
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+         {streak > 0 && (
+           <div className="streak-badge animate-bounce-subtle">
+             🔥 {streak}
+           </div>
+         )}
+         <div className="hud-card flex items-center gap-3 px-4 py-2 border-primary/20 bg-[#0f172a]/80 shadow-neon animate-pulse-glow">
+            <Zap className="text-primary" size={16} />
+            <span className="font-black italic text-sm text-primary tracking-tighter">PREMIUM</span>
+         </div>
       </div>
     </div>
-    <div className="flex items-center gap-2">
-       {streak > 0 && (
-         <div className="streak-badge animate-bounce-subtle">
-           🔥 {streak}
-         </div>
-       )}
-       <div className="hud-card flex items-center gap-3 px-4 py-2 border-primary/20 bg-[#0f172a]/80 shadow-neon animate-pulse-glow">
-          <Zap className="text-primary" size={16} />
-          <span className="font-black italic text-sm text-primary tracking-tighter">PREMIUM</span>
-       </div>
-    </div>
-  </div>
-);
+  );
+}
 
 const OnboardingScreen = ({ onComplete, initialGrade }) => {
   const avatars = [
@@ -236,7 +255,7 @@ const OnboardingScreen = ({ onComplete, initialGrade }) => {
   );
 };
 
-const RankingView = ({ user, xp, level, stats, turma, joinTurma, onBack }) => {
+const RankingView = ({ user, xp, level, streak, stats, turma, joinTurma, onBack }) => {
   const [activeTab, setActiveTab] = React.useState('local');
   const [globalList, setGlobalList] = React.useState([]);
   const [turmaList, setTurmaList] = React.useState([]);
@@ -291,7 +310,7 @@ const RankingView = ({ user, xp, level, stats, turma, joinTurma, onBack }) => {
 
   return (
     <div className="max-w-md mx-auto p-2">
-      <Header title="Rankings" onBack={onBack} />
+      <Header title="Rankings" streak={streak} onBack={onBack} />
       
       <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 mb-6 font-black italic text-[10px] uppercase">
         {['local', 'turma', 'global'].map(t => (
@@ -378,7 +397,7 @@ const PaywallModal = ({ isOpen, onClose, message }) => {
   );
 };
 
-const TeacherDashboard = ({ user, plan, isPremium, onBack, selectedTurma, setSelectedTurma, lastTurmaId }) => {
+const TeacherDashboard = ({ user, plan, isPremium, streak, onBack, selectedTurma, setSelectedTurma, lastTurmaId }) => {
   const [showPaywall, setShowPaywall] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState('alunos');
   const [nomeTurma, setNomeTurma] = React.useState('');
@@ -1265,7 +1284,7 @@ const TeacherDashboard = ({ user, plan, isPremium, onBack, selectedTurma, setSel
 
   return (
     <div className="max-w-md mx-auto p-2 pb-12">
-      <Header title="Professor VIP" onBack={selectedTurma ? () => { setSelectedTurma(null); setActiveTab('alunos'); } : onBack} />
+      <Header title="Professor VIP" streak={streak} onBack={selectedTurma ? () => { setSelectedTurma(null); setActiveTab('alunos'); } : onBack} />
       
       {!selectedTurma ? renderMinhasTurmas() : (
         <>
@@ -1298,7 +1317,8 @@ const TeacherDashboard = ({ user, plan, isPremium, onBack, selectedTurma, setSel
   );
 };
 
-const StatsView = ({ stats, onBack }) => {
+const StatsView = ({ stats, streak, onBack }) => {
+  const [showPaywall, setShowPaywall] = React.useState(false);
   const operations = ['soma', 'subtracao', 'multiplicacao', 'divisao'];
   const bgColors = ['#4facfe', '#f50057', '#f9ce34', '#00e676'];
 
@@ -1317,7 +1337,7 @@ const StatsView = ({ stats, onBack }) => {
 
   return (
     <div className="max-w-md mx-auto p-4 space-y-6 pb-24">
-      <Header title="Registro do Jogador" onBack={onBack} />
+      <Header title="Registro do Jogador" streak={streak} onBack={onBack} />
       
       <div className="glass-card p-6 text-center space-y-4 shadow-glass border-primary/20 bg-primary/5 relative overflow-hidden">
         {/* Enfeite fundo radial */}
@@ -1384,61 +1404,73 @@ const StatsView = ({ stats, onBack }) => {
     </div>
   );
 };
-const SettingsView = ({ user, isPremium, setIsPremium, setAvatar, settings, setSettings, grade, setGrade, onBack, resetProgress, logout, setAuthLoading }) => {
+const SettingsView = ({ user, level, isPremium, setIsPremium, setAvatar, streak, settings, setSettings, grade, setGrade, onBack, resetProgress, logout, setAuthLoading }) => {
   const avatars = [
-
     '👦','👧','🧒','🧑','👨','👩','👱','🧔','🦁','🐯',
-    '🐸','🐼','🦊','🐨','🐙','🦖','🚀','⭐','🎮','🤖'
+    '🐸','🐼','🦊','🐨','🐙','REX','🚀','⭐','🎮','🤖'
   ];
   
-  const canChangeAvatar = () => {
-    if (!user.lastAvatarChange) return true;
-    const daysSince = (Date.now() - user.lastAvatarChange) / (1000 * 60 * 60 * 24);
-    return daysSince >= 7;
+  const isAvatarUnlocked = (a) => {
+    const premium = PREMIUM_AVATARS.find(p => p.url === a);
+    if (!premium) return true; // Emojis sempre liberados
+    return (level || 1) >= premium.minLevel;
   };
 
   const handleAvatarSelect = (a) => {
     if (a === user.avatar) return;
-    if (!canChangeAvatar()) {
-      const daysLeft = Math.ceil(7 - ((Date.now() - user.lastAvatarChange) / (1000 * 60 * 60 * 24)));
-      alert(`⏳ Regra Ativa: Você só pode trocar de avatar 1 vez por semana. Tente novamente em ${daysLeft} dia(s).`);
+    if (!isAvatarUnlocked(a)) {
+      const premium = PREMIUM_AVATARS.find(p => p.url === a);
+      alert(`🔐 Bloqueado: Este avatar requer Nível ${premium.minLevel}. Continue jogando para desbloquear!`);
       return;
     }
-    if (confirm("Você só poderá trocar de avatar novamente daqui a 7 dias. Confirmar novo visual?")) {
-      setAvatar(a);
-      alert("✅ Avatar atualizado!");
-    }
+    setAvatar(a);
+    alert("✅ Avatar atualizado!");
   };
 
   const toggle = (key) => setSettings(s => ({ ...s, [key]: !s[key] }));
 
   return (
     <div className="max-w-md mx-auto p-4 space-y-6 pb-24">
-      <Header title="Ajustes" onBack={onBack} />
+      <Header title="Ajustes" streak={streak} onBack={onBack} />
 
       <div className="glass-card p-6 space-y-6 shadow-glass">
         {/* AVATAR SELECTOR */}
         <div className="space-y-3 pb-4 border-b border-white/5">
           <div className="flex justify-between items-center mb-2">
             <p className="font-black text-sm uppercase italic">Seu Avatar</p>
-            {!canChangeAvatar() && (
-               <span className="text-[9px] bg-rose-500/20 text-rose-500 font-bold uppercase tracking-widest px-2 py-0.5 rounded-full">
-                 Cooldown (7 dias)
-               </span>
-            )}
           </div>
-          <div className={`grid grid-cols-5 gap-2 p-3 rounded-2xl shadow-inner border border-white/5 ${canChangeAvatar() ? 'bg-white/[0.02]' : 'bg-slate-900/50 opacity-50 grayscale'}`}>
+          <div className={`grid grid-cols-5 gap-3 p-3 rounded-2xl shadow-inner border border-white/5 bg-white/[0.02]`}>
+            {/* FIRST: PREMIUM AVATARS */}
+            {PREMIUM_AVATARS.map(p => {
+              const unlocked = isAvatarUnlocked(p.url);
+              return (
+                <button 
+                  key={p.id} 
+                  onClick={() => handleAvatarSelect(p.url)} 
+                  className={`relative aspect-square rounded-xl overflow-hidden transition-all ${user.avatar === p.url ? 'ring-2 ring-primary scale-110 z-10 shadow-neon' : 'hover:scale-105'} ${!unlocked ? 'opacity-40 grayscale' : ''}`}
+                >
+                  <img src={p.url} className="w-full h-full object-cover" alt="Avatar" />
+                  {!unlocked && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                       <span className="text-[8px] font-black text-white">LV {p.minLevel}</span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+            
+            {/* THEN: CLASSIC EMOJIS */}
             {avatars.map(a => (
               <button 
                 key={a} 
                 onClick={() => handleAvatarSelect(a)} 
-                className={`text-2xl p-2 rounded-lg transition-all ${user.avatar === a ? 'bg-primary/30 scale-110 border-2 border-primary z-10' : 'hover:bg-white/5'}`}
+                className={`text-2xl p-2 rounded-xl transition-all ${user.avatar === a ? 'bg-primary/20 ring-2 ring-primary scale-110 z-10 shadow-neon' : 'hover:bg-white/5'}`}
               >
                 {a}
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic tracking-tight text-center">Permitido alterar 1 vez por semana</p>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic tracking-tight text-center">Desbloqueie novos avatares subindo de nível!</p>
         </div>
 
         <div className="space-y-4">
@@ -1665,19 +1697,23 @@ const AppContent = () => {
 
   React.useEffect(() => {
     if (user && !authLoading) {
-      // Redirecionamento Removido: Land on student menu (index) by default as per user request
-
       const savedView = localStorage.getItem(`math_adventure_view_${user.id}`);
       if (savedView && savedView !== view) {
         setView(savedView);
       }
-      
       const savedTurmaId = localStorage.getItem(`math_adventure_turma_${user.id}`);
       if (savedTurmaId) {
         setLastTurmaId(savedTurmaId);
       }
     }
   }, [user?.id, authLoading]);
+
+  // SAFE ROLE GUARD: Move state logic into useEffect to prevent render loops
+  React.useEffect(() => {
+    if (user?.role === 'student' && view === 'teacher') {
+       setView('menu');
+    }
+  }, [user?.role, view]);
 
   React.useEffect(() => {
     if (view) {
@@ -1703,7 +1739,8 @@ const AppContent = () => {
     }, 15000);
 
     const checkSession = async () => {
-      const { data: { session } } = await authAPI.getSession();
+      const res = await authAPI.getSession();
+      const session = res?.data?.session;
       if (session) {
         console.log("⚡ Sessão inicial encontrada:", session.user.id);
         if (window.location.hash) {
@@ -1720,7 +1757,7 @@ const AppContent = () => {
 
     checkSession();
 
-    const { data: { subscription } } = authAPI.onAuthStateChange(async (event, session) => {
+    const resAuth = authAPI.onAuthStateChange(async (event, session) => {
       console.log(`🔔 Evento Auth: ${event}`);
 
       if (event === 'SIGNED_IN' && session) {
@@ -1755,7 +1792,9 @@ const AppContent = () => {
     return () => {
        console.log("🧹 Limpando listeners de Autenticação");
        clearTimeout(authTimeout);
-       subscription.unsubscribe();
+       if (resAuth?.data?.subscription) {
+         resAuth.data.subscription.unsubscribe();
+       }
     };
   }, []);
 
@@ -1903,163 +1942,7 @@ const AppContent = () => {
       stats={stats} tabuadaBase={tabuadaBase} setTabuadaBase={setTabuadaBase} 
     />;
   }
-
-    const Dashboard = () => {
-      const gameColors = [
-        'bg-gradient-to-br from-emerald-500 to-emerald-700',
-        'bg-gradient-to-br from-purple-500 to-purple-700',
-        'bg-gradient-to-br from-blue-500 to-blue-700',
-        'bg-gradient-to-br from-orange-500 to-orange-700',
-        'bg-gradient-to-br from-pink-500 to-pink-700',
-        'bg-gradient-to-br from-cyan-500 to-cyan-700',
-        'bg-gradient-to-br from-indigo-500 to-indigo-700',
-        'bg-gradient-to-br from-rose-500 to-rose-700',
-      ];
-      // Tabuada first as hero, then rest
-      const regularCards = [
-        { name: "Soma (+)",       id: "soma",          emoji: "➕" },
-        { name: "Subtração (-)", id: "subtracao",     emoji: "➖" },
-        { name: "Multiplicação", id: "multiplicacao",  emoji: "✖️" },
-        { name: "Divisão (/)",   id: "divisao",       emoji: "➗" },
-        { name: "Porcentagem",    id: "porcentagem",    emoji: "📊" },
-        { name: "Frações",       id: "fracoes",       emoji: "🍕" },
-        { name: "Decimais",       id: "decimais",      emoji: "📐" },
-        { name: "Área",           id: "area",          emoji: "📏" },
-      ];
-
-      const isMusicOn = settings?.musicEnabled !== false;
-
-      return (
-        <div className="flex flex-col items-center w-full min-h-screen bg-[#020617] text-white relative overflow-hidden pb-28">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.1),transparent_50%)] pointer-events-none" />
-          
-          <main className="flex-1 w-full max-w-xl mx-auto p-6 relative z-10 flex flex-col items-center">
-            {/* TOPO: AVATAR */}
-            <div className="flex flex-col items-center mb-8 w-full mt-6">
-              <motion.div 
-                initial={{ scale: 0.8, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }}
-                className="avatar w-28 h-28 rounded-full bg-gradient-to-tr from-cyan-400 to-purple-600 p-[3px] mb-4 shadow-[0_0_40px_rgba(34,211,238,0.3)] relative"
-              >
-                <div className="w-full h-full bg-[#020617] rounded-full flex items-center justify-center text-5xl">
-                  {user?.avatar || '😁'}
-                </div>
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[11px] font-black italic px-4 py-1.5 rounded-full border-2 border-[#020617] shadow-lg uppercase tracking-wider whitespace-nowrap">
-                  Nível {level}
-                </div>
-              </motion.div>
-              <h2 className="text-3xl font-extrabold tracking-tight text-white mb-2 text-center">{user?.name || "Jogador"}</h2>
-              <div className="w-full max-w-[220px] bg-white/10 rounded-full h-4 border border-white/5 relative overflow-hidden shadow-inner">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min((xp / (level * 100)) * 100, 100)}%` }}
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full"
-                />
-              </div>
-              <div className="text-[11px] text-gray-400 font-bold tracking-widest uppercase mt-2">{Math.floor(xp)} / {level * 100} XP</div>
-            </div>
-
-            {/* CTA */}
-            <motion.button
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => handleStartGame('mixed')}
-              className="w-full max-w-md cta-main mb-10 py-7 rounded-[28px] text-white flex flex-col items-center justify-center gap-1 border border-white/20 relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="text-5xl drop-shadow-md mb-1">🚀</span>
-              <span className="text-3xl font-black italic tracking-wide drop-shadow-lg">JOGAR AGORA</span>
-            </motion.button>
-
-            {/* MISSÕES */}
-            <div className="w-full mb-8">
-              <h3 className="text-xl font-extrabold text-white tracking-tight mb-5 px-1">Missões Mágicas</h3>
-              
-              {/* TABUADA HERO CARD — full width, expandido */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
-                onClick={() => { setSelectedModule('tabuada_pro'); setView('play'); }}
-                className="card-game highlight-card mb-4 p-6 flex flex-row items-center justify-between cursor-pointer w-full bg-gradient-to-br from-amber-400 to-orange-600 text-white border-2 border-yellow-300/60 ring-2 ring-yellow-300/30 relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-3xl -mr-14 -mt-14 pointer-events-none" />
-                <div className="flex flex-col gap-1">
-                  <div className="bg-black/20 text-yellow-100 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest w-fit mb-1">⭐ Modo Destaque</div>
-                  <span className="text-3xl font-black italic drop-shadow-lg">Tabuada 0–10</span>
-                  <span className="text-sm opacity-80 font-medium">Multiplicação organizada, passo a passo</span>
-                </div>
-                <span className="text-6xl drop-shadow-md">⭐</span>
-              </motion.div>
-
-              {/* GRID 2-colunas para os demais cards */}
-              <div className="grid grid-cols-2 gap-4">
-                {regularCards.map((item, i) => {
-                  const cardColor = gameColors[i % gameColors.length];
-                  return (
-                    <motion.div
-                      key={item.id + i}
-                      initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i + 1) * 0.05 }}
-                      onClick={() => { setSelectedModule(item.id); setView('play'); }}
-                      className={`card-game p-5 flex flex-col justify-between cursor-pointer min-h-[130px] ${cardColor} text-white relative overflow-hidden border border-white/20`}
-                    >
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-                      <div className="text-2xl mb-2">{item.emoji}</div>
-                      <span className="font-extrabold text-base leading-tight tracking-tight drop-shadow-md">{item.name}</span>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          </main>
-
-          {/* BOTTOM NAV */}
-          <BottomNav view="menu" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} />
-        </div>
-      );
-    };
-
-    // Componente de navegação inferior reutilizável em todas as telas
-    const BottomNav = ({ view: activeView, setView, isPremium, settings, setSettings, logout }) => {
-      const isMusicOn = settings?.musicEnabled !== false;
-      const nav = [
-        { id: 'menu',    icon: '🏠', label: 'Início',   active: activeView === 'menu' },
-        { id: 'ranking', icon: '🏆', label: 'Ranking',  active: activeView === 'ranking' },
-        ...(isPremium ? [{ id: 'teacher', icon: '👑', label: 'Professor', active: activeView === 'teacher', gold: true }] : []),
-        { id: 'settings',icon: '⚙️', label: 'Perfil',   active: activeView === 'settings' },
-      ];
-      return (
-        <div className="fixed bottom-0 left-0 w-full glass rounded-t-3xl pt-2 pb-4 px-4 flex justify-around items-center z-50">
-          {nav.map(n => (
-            <button
-              key={n.id}
-              onClick={() => { if (settings?.soundEnabled) playSound.click(); setView(n.id); }}
-              className={`flex flex-col items-center p-2 transition transform hover:scale-110 ${
-                n.active ? 'text-cyan-400' : n.gold ? 'text-amber-500 hover:text-amber-300' : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <span className="text-2xl mb-1">{n.icon}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wide">{n.label}</span>
-            </button>
-          ))}
-          {/* Music Toggle */}
-          <button
-            onClick={toggleMusic}
-            className={`flex flex-col items-center p-2 transition transform hover:scale-110 music-btn ${musicPlaying ? 'text-cyan-400' : 'text-gray-400 hover:text-white'}`}
-          >
-            <span className="text-2xl mb-1">{musicPlaying ? '🔊' : '🔇'}</span>
-            <span className="text-[10px] font-bold uppercase tracking-wide">Música</span>
-          </button>
-          {/* Logout */}
-          <button
-            onClick={() => logout()}
-            className="flex flex-col items-center p-2 text-red-400 hover:text-red-300 transition transform hover:scale-110"
-          >
-            <span className="text-2xl mb-1">🚪</span>
-            <span className="text-[10px] font-bold uppercase tracking-wide">Sair</span>
-          </button>
-        </div>
-      );
-    };
-
-
+  
   const isGameOrProva = view === 'play' || view === 'prova';
 
   return (
@@ -2075,24 +1958,40 @@ const AppContent = () => {
         )}
       </AnimatePresence>
 
-      {/* Roteamento Principal (Sem Layout Excedente, o Dashboard já fornece o layout raiz base) */}
+      {/* Roteamento Principal */}
       <AnimatePresence mode="wait">
         {(() => {
-          // Role Guards: Segurança de Rota SaaS
-          if (user?.role === 'student' && view === 'teacher') {
-             setView('menu');
-             return null;
-          }
-
-          if (view === 'menu') return <motion.div key="menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><Dashboard /></motion.div>;
+          if (view === 'menu') return (
+            <motion.div key="menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Dashboard 
+                user={user} level={level} xp={xp} 
+                regularCards={[
+                  { name: "Soma (+)",       id: "soma",          emoji: "➕" },
+                  { name: "Subtração (-)", id: "subtracao",     emoji: "➖" },
+                  { name: "Multiplicação", id: "multiplicacao",  emoji: "✖️" },
+                  { name: "Divisão (/)",   id: "divisao",       emoji: "➗" },
+                  { name: "Porcentagem",    id: "porcentagem",    emoji: "📊" },
+                  { name: "Frações",       id: "fracoes",       emoji: "🍕" },
+                  { name: "Decimais",       id: "decimais",      emoji: "📐" },
+                  { name: "Área",           id: "area",          emoji: "📏" },
+                ]}
+                handleStartGame={handleStartGame}
+              />
+              <BottomNav 
+                view="menu" setView={setView} isPremium={isPremium} 
+                settings={settings} setSettings={setSettings} logout={logout}
+                toggleMusic={toggleMusic} musicPlaying={musicPlaying}
+              />
+            </motion.div>
+          );
           
-          if (view === 'ranking') return <motion.div key="ranking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><RankingView user={user} xp={xp} level={level} stats={stats} turma={turma} joinTurma={joinTurma} onBack={() => { setView('menu'); setSelectedModule(null); }} /><BottomNav view="ranking" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} /></motion.div>;
+          if (view === 'ranking') return <motion.div key="ranking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><RankingView user={user} xp={xp} level={level} stats={stats} turma={turma} joinTurma={joinTurma} streak={streak} onBack={() => { setView('menu'); setSelectedModule(null); }} /><BottomNav view="ranking" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} toggleMusic={toggleMusic} musicPlaying={musicPlaying} /></motion.div>;
           
-          if (view === 'teacher') return <motion.div key="teacher" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><TeacherDashboard user={user} plan={plan} isPremium={isPremium} onBack={() => { setView('menu'); setSelectedModule(null); }} selectedTurma={selectedTurma} setSelectedTurma={setSelectedTurma} lastTurmaId={lastTurmaId} /><BottomNav view="teacher" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} /></motion.div>;
+          if (view === 'teacher') return <motion.div key="teacher" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><TeacherDashboard user={user} plan={plan} isPremium={isPremium} streak={streak} onBack={() => { setView('menu'); setSelectedModule(null); }} selectedTurma={selectedTurma} setSelectedTurma={setSelectedTurma} lastTurmaId={lastTurmaId} /><BottomNav view="teacher" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} toggleMusic={toggleMusic} musicPlaying={musicPlaying} /></motion.div>;
           
-          if (view === 'stats') return <motion.div key="stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><StatsView stats={stats} onBack={() => { setView('menu'); setSelectedModule(null); }} /><BottomNav view="stats" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} /></motion.div>;
+          if (view === 'stats') return <motion.div key="stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><StatsView stats={stats} streak={streak} onBack={() => { setView('menu'); setSelectedModule(null); }} /><BottomNav view="stats" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} toggleMusic={toggleMusic} musicPlaying={musicPlaying} /></motion.div>;
           
-          if (view === 'settings') return <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><SettingsView user={user} isPremium={isPremium} setIsPremium={setIsPremium} setAvatar={setAvatar} settings={settings} setSettings={setSettings} grade={grade} setGrade={setGrade} onBack={() => { setView('menu'); setSelectedModule(null); }} resetProgress={resetProgress} logout={logout} setAuthLoading={setAuthLoading} /><BottomNav view="settings" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} /></motion.div>;
+          if (view === 'settings') return <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#020617] text-white overflow-y-auto pb-28"><SettingsView user={user} level={level} isPremium={isPremium} setIsPremium={setIsPremium} setAvatar={setAvatar} streak={streak} settings={settings} setSettings={setSettings} grade={grade} setGrade={setGrade} onBack={() => { setView('menu'); setSelectedModule(null); }} resetProgress={resetProgress} logout={logout} setAuthLoading={setAuthLoading} /><BottomNav view="settings" setView={setView} isPremium={isPremium} settings={settings} setSettings={setSettings} logout={logout} toggleMusic={toggleMusic} musicPlaying={musicPlaying} /></motion.div>;
           return null;
         })()}
       </AnimatePresence>
@@ -2104,6 +2003,185 @@ const AppContent = () => {
     </>
   );
 };
+
+// --- GLOBAL SUB-COMPONENTS ---
+
+const Dashboard = ({ user, level, xp, regularCards, handleStartGame }) => {
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    e.currentTarget.style.setProperty("--x", `${x}%`);
+    e.currentTarget.style.setProperty("--y", `${y}%`);
+  };
+
+  return (
+    <div className="flex flex-col items-center w-full min-h-screen bg-[#020617] text-white relative overflow-hidden pb-28">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.1),transparent_50%)] pointer-events-none" />
+      
+      <main className="flex-1 w-full max-w-xl mx-auto p-6 relative z-10 flex flex-col items-center">
+        {/* TOPO: AVATAR */}
+        <div className="flex flex-col items-center mb-12 w-full mt-4">
+          <div className="level-card-impact">
+            <div className="level-card-inner" />
+            
+            <div className="flex items-center justify-between w-full mb-6">
+               <div className="relative">
+                <div 
+                  className="avatar-container"
+                  onMouseMove={handleMouseMove}
+                >
+                  <div className="avatar-ring">
+                    <div className="avatar-inner">
+                       {user?.avatar?.includes('.png') ? (
+                         <img src={user.avatar} className="w-full h-full object-cover" alt="Avatar" />
+                       ) : (
+                         <span className="text-6xl">{user?.avatar || '😁'}</span>
+                       )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end">
+                <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Nível Atual</span>
+                <span className="text-level-giant">{level}</span>
+              </div>
+            </div>
+
+            <div className="w-full mb-4">
+              <div className="user-name mb-0.5">
+                {user?.name || "Jogador"} <span className="status-dot"></span>
+              </div>
+              <div className="flex items-center gap-2">
+                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-400 bg-cyan-400/10 px-2 py-0.5 rounded-md border border-cyan-400/20">
+                    {getGamingTitle(level)}
+                 </span>
+              </div>
+            </div>
+
+            <div className="w-full">
+              <div className="flex justify-between items-end mb-1.5 px-0.5">
+                <div className="flex items-center gap-2 text-[10px] font-black text-white/50 uppercase tracking-widest">
+                  <TrendingUp size={12} className="text-cyan-400" />
+                  Progresso de Nível
+                </div>
+                <div className="text-[10px] font-black text-cyan-400">
+                  {Math.floor((xp / (level * 100)) * 100)}%
+                </div>
+              </div>
+              <div className="w-full bg-white/5 rounded-full h-2.5 border border-white/5 relative overflow-hidden shadow-inner p-[1px]">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min((xp / (level * 100)) * 100, 100)}%` }}
+                  className="h-full bg-gradient-to-r from-cyan-400 via-primary to-purple-600 rounded-full xp-shimmer"
+                />
+              </div>
+              <div className="text-[9px] text-white/30 font-bold uppercase mt-2 tracking-widest text-right">
+                {Math.floor(xp)} / {level * 100} XP total
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <motion.button
+          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+          onClick={() => handleStartGame('mixed')}
+          className="w-full max-w-md cta-main mb-10 py-7 rounded-[28px] text-white flex flex-col items-center justify-center gap-1 border border-white/20 relative overflow-hidden group"
+        >
+          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <span className="text-5xl drop-shadow-md mb-1">🚀</span>
+          <span className="text-3xl font-black italic tracking-wide drop-shadow-lg">JOGAR AGORA</span>
+        </motion.button>
+
+        {/* MISSÕES */}
+        <div className="w-full mb-8">
+          <h3 className="text-xl font-extrabold text-white tracking-tight mb-5 px-1">Missões Mágicas</h3>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
+            onClick={() => handleStartGame('tabuada_pro')}
+            className="card-game highlight-card mb-4 p-6 flex flex-row items-center justify-between cursor-pointer w-full bg-gradient-to-br from-amber-400 to-orange-600 text-white border-2 border-yellow-300/60 ring-2 ring-yellow-300/30 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-3xl -mr-14 -mt-14 pointer-events-none" />
+            <div className="flex flex-col gap-1">
+              <div className="bg-black/20 text-yellow-100 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest w-fit mb-1">⭐ Modo Destaque</div>
+              <span className="text-3xl font-black italic drop-shadow-lg">Tabuada 0–10</span>
+              <span className="text-sm opacity-80 font-medium">Multiplicação organizada, passo a passo</span>
+            </div>
+            <span className="text-6xl drop-shadow-md">⭐</span>
+          </motion.div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {regularCards.map((item, i) => {
+              const opClass = item.id === 'soma' ? 'card-soma' : 
+                            item.id === 'subtracao' ? 'card-subtracao' :
+                            item.id === 'multiplicacao' ? 'card-multiplicacao' :
+                            item.id === 'divisao' ? 'card-divisao' : '';
+              
+              return (
+                <motion.div
+                  key={item.id + i}
+                  initial={{ opacity: 0, y: 15 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  transition={{ delay: (i + 1) * 0.05 }}
+                  onClick={() => handleStartGame(item.id)}
+                  className={`card-game p-5 flex flex-col justify-between cursor-pointer min-h-[130px] ${opClass} text-white relative border-white/5 shadow-neon-soft`}
+                >
+                  <div className="text-3xl mb-2 drop-shadow-lg">{item.emoji}</div>
+                  <span className="font-extrabold text-base leading-tight tracking-tight drop-shadow-md uppercase italic">{item.name}</span>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+const BottomNav = ({ view: activeView, setView, isPremium, settings, setSettings, logout, toggleMusic, musicPlaying }) => {
+  const nav = [
+    { id: 'menu',    icon: '🏠', label: 'Início',   active: activeView === 'menu' },
+    { id: 'ranking', icon: '🏆', label: 'Ranking',  active: activeView === 'ranking' },
+    ...(isPremium ? [{ id: 'teacher', icon: '👑', label: 'Professor', active: activeView === 'teacher', gold: true }] : []),
+    { id: 'settings',icon: '⚙️', label: 'Perfil',   active: activeView === 'settings' },
+  ];
+  return (
+    <div className="fixed bottom-0 left-0 w-full glass rounded-t-3xl pt-2 pb-4 px-4 flex justify-around items-center z-50">
+      {nav.map(n => (
+        <button
+          key={n.id}
+          onClick={() => { if (settings?.soundEnabled) playSound.click(); setView(n.id); }}
+          className={`flex flex-col items-center p-2 transition transform hover:scale-110 ${
+            n.active ? 'text-cyan-400' : n.gold ? 'text-amber-500 hover:text-amber-300' : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <span className="text-2xl mb-1">{n.icon}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wide">{n.label}</span>
+        </button>
+      ))}
+      <button
+        onClick={toggleMusic}
+        className={`flex flex-col items-center p-2 transition transform hover:scale-110 music-btn ${musicPlaying ? 'text-cyan-400' : 'text-gray-400 hover:text-white'}`}
+      >
+        <span className="text-2xl mb-1">{musicPlaying ? '🔊' : '🔇'}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wide">Música</span>
+      </button>
+      <button
+        onClick={() => logout()}
+        className="flex flex-col items-center p-2 text-red-400 hover:text-red-300 transition transform hover:scale-110"
+      >
+        <span className="text-2xl mb-1">🚪</span>
+        <span className="text-[10px] font-bold uppercase tracking-wide">Sair</span>
+      </button>
+    </div>
+  );
+};
+
+
+// --- MAIN APP ENTRY ---
 
 const App = () => {
   return (
