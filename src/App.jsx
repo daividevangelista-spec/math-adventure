@@ -2036,7 +2036,7 @@ const Dashboard = ({ user, level, xp, regularCards, handleStartGame }) => {
                        {user?.avatar?.includes('.png') ? (
                          <img src={user.avatar} className="w-full h-full object-cover" alt="Avatar" />
                        ) : (
-                         <span className="text-6xl">{user?.avatar || '😁'}</span>
+                         <span className="text-9xl">{user?.avatar || '😁'}</span>
                        )}
                     </div>
                   </div>
