@@ -87,15 +87,29 @@ export const useGameState = () => {
 
   React.useEffect(() => {
     if (user) {
-      const today = new Date().toLocaleDateString();
-      if (lastLogin !== today) {
-        setXp(x => x + 50);
-        setLastLogin(today);
-        setClaimedDaily(false);
-        NotificationService.notify("Bônus Diário! 🎁", "Você ganhou +50 XP por voltar hoje!");
+      const today = new Date().toDateString();
+      const last = lastLogin; // lastLogin is already in state from localStorage
+      
+      if (last === today) return;
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toDateString();
+
+      if (last === yesterdayStr) {
+        setStreak(s => s + 1);
+      } else if (last) {
+        setStreak(1);
+      } else {
+        setStreak(1);
       }
+
+      setLastLogin(today);
+      setClaimedDaily(false);
+      setXp(x => x + 50);
+      NotificationService.notify("Bônus de Streak! 🔥", "Você ganhou +50 XP por voltar hoje!");
     }
-  }, [user, lastLogin]);
+  }, [user]); // Run once when user is loaded
 
   // Sync Realtime com Supabase Turma (Sincronização passiva para ranking)
   React.useEffect(() => {
@@ -272,7 +286,18 @@ export const useGameState = () => {
     if (isCorrect) setStreak(s => s + 1);
     else setStreak(0);
 
-    setXp(totalXp);
+    let newXp = totalXp;
+    let newLevel = level;
+    let hasLeveledUp = false;
+
+    // Check multiple level ups if enough XP is gained (e.g. from a big mission)
+    while (newXp >= newLevel * 100) {
+      newXp -= newLevel * 100;
+      newLevel += 1;
+      hasLeveledUp = true;
+    }
+
+    setXp(newXp);
     
     // Sincronização Atômica com Supabase
     if (user?.id) {
@@ -284,13 +309,12 @@ export const useGameState = () => {
         }
     }
 
-    const newLevel = Math.floor(totalXp / 100) + 1;
-    if (newLevel > level) {
+    if (hasLeveledUp) {
       if (user?.id) {
           rankingAPI.logActivity(user.id, user.name, turma?.id, 'level_up', `Subiu para o Nível ${newLevel}!`, { level: newLevel });
       }
       setLevel(newLevel);
-      return { leveledUp: true };
+      return { leveledUp: true, newLevel };
     }
     return { leveledUp: false };
   };

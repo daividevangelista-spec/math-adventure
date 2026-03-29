@@ -109,27 +109,59 @@ export const playSound = {
     }
   },
 
-  // ✅ Duolingo-style "ding-ding!" (E5 → C6)
+  // ✅ Premium Correct Sound (MP3 + fallback)
   success: () => {
     if (isMuted) return;
-    playTone(659.25, 0.18, 'sine', 0.55, 0.00);
-    playTone(1046.50, 0.40, 'sine', 0.75, 0.12);
+    try {
+      const audio = new Audio("/sounds/correct.mp3");
+      audio.volume = 0.4;
+      audio.play().catch(e => {
+        // Fallback to synthetic if file not found
+        playTone(659.25, 0.18, 'sine', 0.55, 0.00);
+        playTone(1046.50, 0.40, 'sine', 0.75, 0.12);
+      });
+    } catch (e) {
+      playTone(659.25, 0.18, 'sine', 0.55, 0.00);
+      playTone(1046.50, 0.40, 'sine', 0.75, 0.12);
+    }
   },
 
-  // ❌ Soft Error "Ba-bow" (D4 → A3)
+  // ❌ Premium Error Sound (MP3 + fallback)
   error: () => {
     if (isMuted) return;
-    playTone(293.66, 0.20, 'triangle', 0.45, 0.00);
-    playTone(220.00, 0.35, 'sawtooth', 0.35, 0.18);
+    try {
+      const audio = new Audio("/sounds/error.mp3");
+      audio.volume = 0.4;
+      audio.play().catch(e => {
+        // Fallback to synthetic
+        playTone(293.66, 0.20, 'triangle', 0.45, 0.00);
+        playTone(220.00, 0.35, 'sawtooth', 0.35, 0.18);
+      });
+    } catch (e) {
+      playTone(293.66, 0.20, 'triangle', 0.45, 0.00);
+      playTone(220.00, 0.35, 'sawtooth', 0.35, 0.18);
+    }
   },
 
-  // 🏆 Fanfare (C5 → E5 → G5 → C6)
+  // 🏆 Fanfare (MP3 + fallback)
   levelUp: () => {
     if (isMuted) return;
-    playTone(523.25, 0.15, 'sine', 0.60, 0.00);
-    playTone(659.25, 0.15, 'sine', 0.60, 0.15);
-    playTone(783.99, 0.15, 'sine', 0.60, 0.30);
-    playTone(1046.50, 0.60, 'sine', 0.80, 0.45);
+    try {
+      const audio = new Audio("/sounds/levelup.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(e => {
+        // Fallback to synthetic
+        playTone(523.25, 0.15, 'sine', 0.60, 0.00);
+        playTone(659.25, 0.15, 'sine', 0.60, 0.15);
+        playTone(783.99, 0.15, 'sine', 0.60, 0.30);
+        playTone(1046.50, 0.60, 'sine', 0.80, 0.45);
+      });
+    } catch (e) {
+      playTone(523.25, 0.15, 'sine', 0.60, 0.00);
+      playTone(659.25, 0.15, 'sine', 0.60, 0.15);
+      playTone(783.99, 0.15, 'sine', 0.60, 0.30);
+      playTone(1046.50, 0.60, 'sine', 0.80, 0.45);
+    }
   },
 
   // ⚡ Pop

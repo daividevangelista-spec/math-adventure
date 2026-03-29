@@ -2,6 +2,7 @@ import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CheckCircle, XCircle, Send, Award, Clock } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { fireConfetti } from '../utils/gameEffects';
 import { playSound } from '../utils/audioManager';
 import { Mascot } from './Mascot';
 
@@ -215,7 +216,7 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
     setIsShaking(true);
     setFlashColor('error');
     setMascotMsg(errorPhrases[Math.floor(Math.random() * errorPhrases.length)]);
-    setTimeout(() => { setIsShaking(false); setFlashColor(null); }, 500);
+    setTimeout(() => { setIsShaking(false); setFlashColor(null); }, 600);
 
     // Update exam counters if in exam mode
     if (modoProva) {
@@ -241,7 +242,7 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
     if (val.toString().toLowerCase() === question.answer.toString().toLowerCase()) {
       setFeedback('correct');
       if (settings?.soundEnabled) playSound.success();
-      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#5eead4', '#3b82f6', '#fcd34d'], disableForReducedMotion: true });
+      fireConfetti(window.innerWidth < 768);
       addXp(10, true, mode);
       
       setIsZooming(true);
@@ -285,10 +286,10 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
         return next;
       });
       if (settings?.soundEnabled) playSound.success();
-      confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 }, colors: ['#5eead4', '#3b82f6'] });
+      fireConfetti(true); // Small one for tabuada
       addXp(2, true, 'multiplicacao');
       setEarnedXp(2);
-      setTimeout(() => setEarnedXp(null), 1500);
+      setTimeout(() => setEarnedXp(null), 800);
       setTimeout(() => {
         // Find FIRST available input that isn't correct yet
         const nextIdx = [...Array(11).keys()]
@@ -359,15 +360,8 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#1e1b4b_0%,#020617_70%)] opacity-50 pointer-events-none" />
       
       <AnimatePresence>
-        {flashColor && (
-          <motion.div 
-             initial={{ opacity: 0 }} 
-             animate={{ opacity: 0.3 }} 
-             exit={{ opacity: 0 }} 
-             transition={{ duration: 0.3 }}
-             className={`absolute inset-0 z-0 pointer-events-none ${flashColor === 'success' ? 'bg-success' : 'bg-error'}`} 
-          />
-        )}
+        {flashColor === 'success' && <div className="flash-success" />}
+        {flashColor === 'error' && <div className="flash-error" />}
       </AnimatePresence>
 
       <motion.div 
@@ -448,23 +442,22 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
                 <div className="flex justify-between items-end mb-1.5 w-full gap-5">
                   <span className="font-black italic text-[10px] text-primary text-neon tracking-[0.2em] uppercase">Mestre Lvl {level}</span>
                 </div>
-                <div className="hud-progress-bg w-28 h-3 p-[1px]">
-                  <motion.div 
-                     className="h-full bg-gradient-to-r from-primary to-accent rounded-full shadow-neon relative overflow-hidden"
-                     initial={{ width: 0 }}
-                     animate={{ width: `${Math.min(100, xp % 100)}%` }}
-                     transition={{ type: "spring", stiffness: 40, damping: 10 }}
-                  >
-                     <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.2)_50%,transparent_100%)] animate-[shimmer_4s_infinite]" />
-                  </motion.div>
+                <div className="xp-bar-premium w-28 h-3">
+                    <motion.div 
+                       className="xp-fill-premium h-full rounded-full"
+                       initial={{ width: 0 }}
+                       animate={{ width: `${Math.min(100, (xp / (level * 100)) * 100)}%` }}
+                       transition={{ type: "spring", stiffness: 40, damping: 10 }}
+                    />
                 </div>
                 <AnimatePresence>
                   {earnedXp && (
                      <motion.div
-                       initial={{ opacity: 0, y: 0, scale: 0.5 }}
-                       animate={{ opacity: 1, y: -60, scale: 2 }}
-                       exit={{ opacity: 0, scale: 0.8 }}
-                       className="absolute -top-4 right-0 font-black text-accent text-3xl italic drop-shadow-neon select-none"
+                       initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                       animate={{ opacity: 1, y: -40, scale: 1.2 }}
+                       exit={{ opacity: 0, y: -60 }}
+                       className="xp-float"
+                       style={{ right: '0' }}
                      >
                        +{earnedXp} XP
                      </motion.div>
@@ -508,8 +501,8 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
                     onChange={(e) => handleTabuInput(i, e.target.value)}
                     disabled={tabuFeedback[i] === 'correct'}
                     className={`w-24 bg-[#020617]/80 border-2 rounded-xl py-2 px-3 text-2xl text-center font-black italic focus:outline-none transition-all shadow-input ${
-                      tabuFeedback[i] === 'correct' ? 'border-success bg-success/10 text-success shadow-neon-success scale-105' :
-                      tabuFeedback[i] === 'wrong' ? 'border-error bg-error/5 text-error animate-shake shadow-neon-error' : 'border-white/10 focus:border-primary/50'
+                      tabuFeedback[i] === 'correct' ? 'success-glow bg-success/10 text-success scale-105' :
+                      tabuFeedback[i] === 'wrong' ? 'error-shake bg-error/5 text-error animate-shake' : 'border-white/10 focus:border-primary/50'
                     }`}
                   />
                 </motion.div>
@@ -580,8 +573,8 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleAction(opt)} 
                       className={`glass-card p-6 text-4xl font-black italic border-2 transition-all group overflow-hidden relative shadow-aaa ${
-                        feedback === 'correct' && opt === question.answer ? '!border-success bg-success/20 shadow-neon-success' :
-                        feedback === 'wrong' && opt.toString() === userInput ? '!border-error bg-error/10 animate-shake shadow-neon-error' : 'border-white/10 hover:border-primary/50'
+                        feedback === 'correct' && opt === question.answer ? 'success-glow bg-success/20' :
+                        feedback === 'wrong' && opt.toString() === userInput ? 'error-shake bg-error/10 animate-shake' : 'border-white/10 hover:border-primary/50'
                       }`}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
@@ -597,8 +590,8 @@ const GameRoom = ({ user, xp, level, streak, grade, mode, settings, addXp, onBac
                     onChange={(e) => setUserInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAction(userInput)}
                     className={`w-full bg-[#020617]/90 border-[4px] rounded-[40px] p-10 text-6xl text-center font-black italic focus:outline-none transition-all placeholder:text-slate-800 shadow-aaa ${
-                      feedback === 'correct' ? '!border-success bg-success/10 text-success shadow-neon-success scale-105' :
-                      feedback === 'wrong' ? '!border-error bg-error/5 text-error animate-shake shadow-neon-error' : 'border-white/10 focus:border-primary shadow-glass'
+                      feedback === 'correct' ? 'success-glow bg-success/10 text-success scale-105' :
+                      feedback === 'wrong' ? 'error-shake bg-error/5 text-error animate-shake' : 'border-white/10 focus:border-primary shadow-glass'
                     }`}
                     placeholder="?" autoFocus
                   />

@@ -161,6 +161,11 @@ const Header = ({ title, onBack }) => (
       </div>
     </div>
     <div className="flex items-center gap-2">
+       {streak > 0 && (
+         <div className="streak-badge animate-bounce-subtle">
+           🔥 {streak}
+         </div>
+       )}
        <div className="hud-card flex items-center gap-3 px-4 py-2 border-primary/20 bg-[#0f172a]/80 shadow-neon animate-pulse-glow">
           <Zap className="text-primary" size={16} />
           <span className="font-black italic text-sm text-primary tracking-tighter">PREMIUM</span>
@@ -268,10 +273,15 @@ const RankingView = ({ user, xp, level, stats, turma, joinTurma, onBack }) => {
     }
   };
 
+  const calculateScore = (uXp, uStr) => (uXp || 0) + ((uStr || 0) * 20);
+
   const localRanking = [
-    { name: user.name, xp: xp, level: level, isMe: true },
-    ...(stats.history.length > 0 ? [{ name: 'Desafiante 1', xp: xp - 50, level: level }, { name: 'Desafiante 2', xp: xp - 120, level: level - 1 }] : [])
-  ].sort((a,b) => b.xp - a.xp).map((r, i) => ({ ...r, pos: i + 1 }));
+    { name: user.name, xp: xp, level: level, streak: streak, score: calculateScore(xp, streak), isMe: true },
+    ...(stats.history.length > 0 ? [
+      { name: 'Desafiante 1', xp: xp > 50 ? xp - 50 : 10, level: level, streak: 2, score: calculateScore(xp - 50, 2) },
+      { name: 'Desafiante 2', xp: xp > 120 ? xp - 120 : 5, level: level > 1 ? level - 1 : 1, streak: 0, score: calculateScore(xp - 120, 0) }
+    ] : [])
+  ].sort((a,b) => b.score - a.score).map((r, i) => ({ ...r, pos: i + 1 }));
 
   const lists = {
     local: localRanking,
@@ -325,9 +335,11 @@ const RankingView = ({ user, xp, level, stats, turma, joinTurma, onBack }) => {
                      {r.pos === 1 ? '🥇' : r.pos === 2 ? '🥈' : r.pos === 3 ? '🥉' : r.pos}
                    </div>
                    <div>
-                     <p className={`font-black uppercase ${r.isMe ? 'text-primary' : ''}`}>{r.name} {r.isMe ? '(VOCÊ)' : ''}</p>
-                     <p className="text-xs text-slate-500 font-bold tracking-widest uppercase">{r.xp} XP • NÍVEL {r.level || '?'}</p>
-                   </div>
+                      <p className={`font-black uppercase ${r.isMe ? 'text-primary' : ''}`}>{r.name} {r.isMe ? '(VOCÊ)' : ''}</p>
+                      <p className="text-xs text-slate-500 font-bold tracking-widest uppercase">
+                        {r.score} Pontos ({r.xp} XP • {r.streak || 0}🔥)
+                      </p>
+                    </div>
                 </div>
                 {r.pos === 1 && <Award className="text-accent animate-pulse" />}
               </motion.div>
@@ -1572,6 +1584,17 @@ const AppContent = () => {
   const [selectedModule, setSelectedModule] = React.useState(null);
   const [showSetup, setShowSetup] = React.useState(false);
   const [pendingSession, setPendingSession] = React.useState(null);
+  const [showLevelUp, setShowLevelUp] = React.useState(false);
+  const [prevLevel, setPrevLevel] = React.useState(level);
+
+  // Level Up Watcher
+  React.useEffect(() => {
+    if (level > prevLevel && prevLevel > 0) {
+      setShowLevelUp(true);
+      if (settings?.soundEnabled) playSound.levelUp();
+    }
+    setPrevLevel(level);
+  }, [level, prevLevel, settings?.soundEnabled]);
 
 
   // --- MOVED HOOKS (Ensuring they are called before any early returns) ---
@@ -1597,7 +1620,6 @@ const AppContent = () => {
   const [selectedTurma, setSelectedTurma] = React.useState(null);
   const [setupAvatar, setSetupAvatar] = React.useState('👦');
   const [provaAtiva, setProvaAtiva] = React.useState(null);
-  const [showLevelUp, setShowLevelUp] = React.useState(false);
   const [celebrationLevel, setCelebrationLevel] = React.useState(1);
   const [mascotMsg, setMascotMsg] = React.useState('Calculando...');
   const [isStarting, setIsStarting] = React.useState(false);
@@ -1875,10 +1897,6 @@ const AppContent = () => {
       mode={selectedModule} settings={settings} 
       addXp={(amount, isCorrect, op) => {
         const result = addXp(amount, isCorrect, op);
-        if (result && result.leveledUp) {
-          setCelebrationLevel(level + 1);
-          setShowLevelUp(true);
-        }
         return result;
       }} 
       onBack={() => setView('menu')} 
@@ -1934,11 +1952,11 @@ const AppContent = () => {
               <div className="w-full max-w-[220px] bg-white/10 rounded-full h-4 border border-white/5 relative overflow-hidden shadow-inner">
                 <motion.div 
                   initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(xp % 100, 100)}%` }}
+                  animate={{ width: `${Math.min((xp / (level * 100)) * 100, 100)}%` }}
                   className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full"
                 />
               </div>
-              <div className="text-[11px] text-gray-400 font-bold tracking-widest uppercase mt-2">{xp % 100} / 100 XP</div>
+              <div className="text-[11px] text-gray-400 font-bold tracking-widest uppercase mt-2">{Math.floor(xp)} / {level * 100} XP</div>
             </div>
 
             {/* CTA */}
@@ -2047,6 +2065,15 @@ const AppContent = () => {
   return (
     <>
       <ParticleBackground />
+
+      <AnimatePresence>
+        {showLevelUp && (
+          <LevelUpCelebration 
+            level={level} 
+            onComplete={() => setShowLevelUp(false)} 
+          />
+        )}
+      </AnimatePresence>
 
       {/* Roteamento Principal (Sem Layout Excedente, o Dashboard já fornece o layout raiz base) */}
       <AnimatePresence mode="wait">
