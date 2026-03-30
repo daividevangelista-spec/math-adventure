@@ -42,6 +42,8 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const [mode, setMode] = useState("login"); // 'login' | 'signup' | 'forgot'
   const [message, setMessage] = useState("");
+  const [showPolicy, setShowPolicy] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) return setError("Preencha todos os campos");
@@ -52,6 +54,7 @@ export default function LoginScreen() {
   };
 
   const handleSignup = async () => {
+    if (!acceptedTerms) return setError("🤝 Você precisa aceitar os Termos e Privacidade.");
     if (!email || !password) return setError("Preencha todos os campos");
     setLoading(true); setError(""); setMessage("");
     const { error } = await authAPI.signUp(email, password);
@@ -268,6 +271,30 @@ export default function LoginScreen() {
                   </div>
                 )}
               </div>
+              {/* Privacy Terms Notice (Frictionless login, Mandatory signup) */}
+              {mode === 'signup' && (
+                <div className="terms-container">
+                  <label className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    />
+                    <span className="text-[10px] font-bold text-slate-400">
+                      CONCORDO COM OS <button type="button" onClick={() => setShowPolicy(true)} className="link-alt">TERMOS</button> E <button type="button" onClick={() => setShowPolicy(true)} className="link-alt">PRIVACIDADE</button>
+                    </span>
+                  </label>
+                </div>
+              )}
+              
+              {mode === 'login' && (
+                <div className="text-center py-2">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                    Ao entrar, você concorda com nossos <br />
+                    <button type="button" onClick={() => setShowPolicy(true)} className="link-alt">Termos de Uso</button> e <button type="button" onClick={() => setShowPolicy(true)} className="link-alt">Privacidade</button>
+                  </p>
+                </div>
+              )}
 
               {/* Action Button */}
               <button
@@ -309,11 +336,59 @@ export default function LoginScreen() {
 
           <div className="text-center">
              <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">
-               © {new Date().getFullYear()} Math Adventure Plus • Premium Ed.
+               © {new Date().getFullYear()} Math Adventure Plus • <button onClick={() => setShowPolicy(true)} className="hover:text-slate-400 transition-colors">Privacidade</button> • <button onClick={() => setShowPolicy(true)} className="hover:text-slate-400 transition-colors">Termos</button>
              </p>
           </div>
         </motion.div>
       </div>
+
+      {/* Policy Modal */}
+      <AnimatePresence>
+        {showPolicy && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="policy-modal"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="policy-content"
+            >
+              <h2>Termos e Privacidade</h2>
+              
+              <p>
+                Bem-vindo ao <strong>Math Adventure Plus</strong>. Nossa plataforma tem como objetivo oferecer aprendizado gamificado de matemática para alunos e ferramentas de gestão para professores.
+              </p>
+
+              <div className="highlight">
+                🚀 IMPORTANTE: Atualmente a plataforma oferece recursos gratuitos. No futuro, poderemos incluir planos pagos, assinaturas premium ou funcionalidades exclusivas para garantir a continuidade e evolução do sistema.
+              </div>
+
+              <p className="mt-4">
+                <strong>Uso de Dados:</strong> Seus dados (nome, e-mail, progresso) são utilizados exclusivamente para o funcionamento do jogo, ranking e relatórios pedagógicos. Não vendemos suas informações para terceiros.
+              </p>
+
+              <p>
+                <strong>Conduta:</strong> Ao utilizar o sistema, você concorda em não realizar engenharia reversa, abusar de bugs ou utilizar ferramentas de automação para ganhar XP de forma desonesta.
+              </p>
+
+              <p>
+                <strong>Cookies:</strong> Utilizamos cookies e armazenamento local (como o salvamento do seu aceite destes termos) para manter sua sessão ativa e melhorar a velocidade do app.
+              </p>
+
+              <button 
+                onClick={() => setShowPolicy(false)}
+                className="policy-close-btn"
+              >
+                Entendi e Aceito
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

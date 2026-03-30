@@ -8,7 +8,7 @@ import {
   User, Award, Menu as MenuIcon, X, Plus, LogOut, 
   ChevronRight, Star, Target, Crown, Users, Globe, Download, ArrowLeft, GraduationCap,
   Trash2, Edit3, UserMinus, TrendingUp, Zap, HelpCircle, Copy,
-  Search, Eye, EyeOff, Clock, Layout, Activity, Volume2, VolumeX
+  Search, Eye, EyeOff, Clock, Layout, Activity, Volume2, VolumeX, Shield
 } from 'lucide-react';
 import { useGameState } from './hooks/useGameState';
 import LoginScreen from './components/LoginScreen';
@@ -1604,8 +1604,9 @@ const AppContent = () => {
   const {
     user, authLoading, setAuthLoading, xp, level, streak, grade, stats, missions, tabuadaBase, isPremium, turma, settings, claimedDaily,
     role, plan, setRole, setPlan,
-    login, loginWithSession, setupProfile, logout, addXp, setAvatar, resetProgress, setGrade, setTabuadaBase, joinTurma, setIsPremium, setSettings, setClaimedDaily
+    login, loginWithSession, setupProfile, logout, addXp, setAvatar, resetProgress, setGrade, setTabuadaBase, joinTurma, setIsPremium, setSettings, setClaimedDaily, setAcceptedTerms
   } = useGameState();
+  
 
   const { toggleMusic, isPlaying: musicPlaying } = useMusicPlayer();
 
@@ -1841,7 +1842,45 @@ const AppContent = () => {
 
   if (!user && !showSetup) return <LoginScreen onLogin={(session) => loginWithSession(session)} />;
 
-  // First-time OAuth setup (no name in metadata yet)
+  // Se logado mas ainda não aceitou os termos no banco de dados
+  if (user && user.acceptedTerms === false) {
+    return (
+       <div className="policy-modal">
+         <motion.div 
+           initial={{ scale: 0.9, opacity: 0 }}
+           animate={{ scale: 1, opacity: 1 }}
+           className="policy-content border-2 border-cyan-400/30 shadow-[0_0_100px_rgba(34,211,238,0.2)]"
+         >
+           <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-cyan-400/10 flex items-center justify-center border border-cyan-400/30">
+                 <Shield className="text-cyan-400" />
+              </div>
+           </div>
+           <h2 className="text-center">Último Passo! 🛡️</h2>
+           <p className="text-center text-slate-400 mb-6">
+             Para continuar sua jornada no <strong>Math Adventure Plus</strong>, precisamos que você confirme que leu e concorda com nossas diretrizes.
+           </p>
+           
+           <div className="highlight mb-6">
+             🚀 Lembre-se: Atualmente a plataforma é gratuita, mas no futuro poderemos incluir recursos premium para sua evolução.
+           </div>
+
+           <p className="text-[11px] text-slate-500 leading-relaxed italic text-center pb-4 border-b border-white/5">
+             Seus dados são usados apenas para fins pedagógicos e de ranqueamento. Jamais vendemos seus dados para terceiros.
+           </p>
+
+           <button 
+             onClick={() => setAcceptedTerms(true)}
+             className="policy-close-btn bg-cyan-400 text-slate-950 hover:bg-white transition-all transform active:scale-95"
+           >
+             Aceito e Quero Jogar 🚀
+           </button>
+         </motion.div>
+       </div>
+    );
+  }
+
+  // First-time OAuth setup
   if (showSetup) {
     const avatars = ['\ud83d\udc66','\ud83d\udc67','\ud83e\uddd2','\ud83e\uddd1','\ud83d\udc68','\ud83d\udc69','\ud83e\udd81','\ud83d\udc3c','\ud83e\udd8a','\ud83d\udc38','\ud83d\ude80','\u2b50','\ud83c\udfae','\ud83e\udd96'];
     return (
@@ -1965,6 +2004,7 @@ const AppContent = () => {
             <motion.div key="menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <Dashboard 
                 user={user} level={level} xp={xp} 
+                setAcceptedTerms={setAcceptedTerms}
                 regularCards={[
                   { name: "Soma (+)",       id: "soma",          emoji: "➕" },
                   { name: "Subtração (-)", id: "subtracao",     emoji: "➖" },

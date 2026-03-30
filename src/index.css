@@ -1065,3 +1065,112 @@ button {
   transform: scale(1.08) translateY(-4px);
   filter: brightness(1.2);
 }
+
+/* ===== PRIVACY & TERMS ===== */
+.terms-container {
+  margin: 16px 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.terms-container label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terms-container input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #22d3ee;
+  cursor: pointer;
+}
+
+.link-alt {
+  color: #22d3ee;
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+  transition: all 0.2s;
+}
+
+.link-alt:hover {
+  color: white;
+  border-bottom-color: white;
+}
+
+.policy-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.policy-content {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 32px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 550px;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #cbd5e1;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.policy-content h2 {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin-bottom: 20px;
+  font-style: italic;
+  letter-spacing: -0.02em;
+}
+
+.policy-content p {
+  margin-bottom: 16px;
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.policy-content .highlight {
+  background: rgba(34, 211, 238, 0.15);
+  border-left: 3px solid #22d3ee;
+  color: #22d3ee;
+  padding: 12px 16px;
+  border-radius: 0 12px 12px 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.policy-close-btn {
+  width: 100%;
+  margin-top: 24px;
+  background: white;
+  color: #020617;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+
+.policy-close-btn:hover {
+  transform: scale(0.98);
+  filter: brightness(0.9);
+}

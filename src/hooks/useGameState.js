@@ -231,6 +231,16 @@ export const useGameState = () => {
     setGrade(schoolGrade);
   };
 
+  const setAcceptedTerms = async (accepted) => {
+    setUser(prev => ({ ...prev, acceptedTerms: accepted }));
+    if (user?.id) {
+        await authAPI.updateProfile({ 
+            ...user, 
+            acceptedTerms: accepted 
+        });
+    }
+  };
+
   const setupProfile = async (name, schoolGrade, avatar = '👦', chosenRole = 'student') => {
     const { error } = await authAPI.updateProfile({ 
       name, 

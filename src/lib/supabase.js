@@ -315,15 +315,16 @@ export const authAPI = {
      // 2. Atualiza tabela Profiles para persistência e RLS
      const { data: { user } } = await supabase.auth.getUser();
      if (user) {
-       await supabase.from('profiles').upsert({
-         id: user.id,
-         name: updates.name,
-         grade: updates.grade,
-         avatar: updates.avatar,
-         role: updates.role,
-         plan: updates.plan,
-         is_premium: updates.isPremium
-       });
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          name: updates.name,
+          grade: updates.grade,
+          avatar: updates.avatar,
+          role: updates.role,
+          plan: updates.plan,
+          is_premium: updates.isPremium,
+          accepted_terms: updates.acceptedTerms === undefined ? true : updates.acceptedTerms
+        });
      }
      return { data, error: null };
   },
@@ -349,7 +350,10 @@ export const authAPI = {
         const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
 
         if (error) throw error;
-        if (profile) return profile;
+        if (profile) return { 
+          ...profile, 
+          acceptedTerms: profile.accepted_terms // Maping to the app standard
+        };
 
         // Criar perfil se não existir
         const newProfile = {
@@ -357,11 +361,12 @@ export const authAPI = {
           name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
           email: user.email,
           role: user.user_metadata?.role || (isAdmin ? 'teacher' : 'student'),
-          plan: user.user_metadata?.plan || (isAdmin ? 'premium' : 'free')
+          plan: user.user_metadata?.plan || (isAdmin ? 'premium' : 'free'),
+          accepted_terms: false // New accounts need to accept
         };
 
         await supabase.from('profiles').upsert(newProfile);
-        return newProfile;
+        return { ...newProfile, acceptedTerms: false };
 
       } catch (err) {
         console.warn(`⚠️ Falha ${i+1}/3: ${err.message}`);
